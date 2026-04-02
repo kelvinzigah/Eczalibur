@@ -1,5 +1,18 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { useEffect, useState } from 'react';
+
+// expo-secure-store is not available on web — fall back to localStorage
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') return localStorage.getItem(key);
+    return SecureStore.getItemAsync(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') { localStorage.setItem(key, value); return; }
+    return SecureStore.setItemAsync(key, value);
+  },
+};
 import {
   ActivityIndicator,
   StyleSheet,
@@ -24,7 +37,7 @@ export function PinGate({ children }: PinGateProps) {
 
   useEffect(() => {
     async function checkPin() {
-      const stored = await SecureStore.getItemAsync(PIN_KEY);
+      const stored = await storage.getItem(PIN_KEY);
       setStatus(stored ? 'enter-pin' : 'set-pin');
     }
     checkPin();
@@ -69,7 +82,7 @@ export function PinGate({ children }: PinGateProps) {
   }
 
   async function verifyPin(input: string) {
-    const stored = await SecureStore.getItemAsync(PIN_KEY);
+    const stored = await storage.getItem(PIN_KEY);
     if (input === stored) {
       setStatus('unlocked');
     } else {
@@ -79,7 +92,7 @@ export function PinGate({ children }: PinGateProps) {
   }
 
   async function savePin(pin: string) {
-    await SecureStore.setItemAsync(PIN_KEY, pin);
+    await storage.setItem(PIN_KEY, pin);
     setStatus('unlocked');
   }
 

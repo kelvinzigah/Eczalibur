@@ -125,10 +125,10 @@ export default function SignInScreen() {
             <Text style={styles.subtitle}>Sign in to continue</Text>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="Username"
               placeholderTextColor="#888"
               autoCapitalize="none"
-              keyboardType="email-address"
+              keyboardType="default"
               value={email}
               onChangeText={setEmail}
             />
