@@ -1,5 +1,22 @@
 # Eczcalibur — Build Changelog
 
+## Phase 8 — Logging Flow + Points System (2026-04-02)
+
+**Files modified:**
+- `app/(child)/log.tsx` — full 3-step log screen replacing stub
+
+**Features implemented:**
+- Step 1: Mood face picker — 5 illustrated options (😊 Great / 🙂 Okay / 😕 Itchy / 😣 Very Itchy / 😭 Painful) → moodScore 1–5
+- Step 2: Body area chips — all 10 areas, parent's monitored areas pre-highlighted with 📍 marker
+- Step 3: Optional photo via expo-image-picker (+5 bonus pts); preview + remove supported
+- Submit: writes FlareLog to AsyncStorage, awards 10 pts (or 15 with photo)
+- Confirmation screen shows points earned + running total
+- Returns to child home; points badge updates reactively
+
+**Verified end-to-end:** mood → areas → submit (no photo) → "Quest logged! You earned 10 points. Total: ⭐ 10" → home shows ⭐ 10 and Prize Store (10 pts)
+
+---
+
 ## Phase 1 — Clerk Auth + Routing (2026-04-02)
 
 **Files created/modified:**

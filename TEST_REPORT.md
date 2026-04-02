@@ -60,6 +60,25 @@
 | Plan screen | ✅ 3 zone cards, YOU ARE HERE on Green, Back to Home |
 | Playwright smoke tests | ✅ Config set up (port 8083, Pixel 5) |
 
+## Phase 8 — Logging Flow + Points System
+
+| Check | Result |
+|-------|--------|
+| Step 1 — mood face picker renders (5 options) | ✅ |
+| Step 1 — Next disabled until mood selected | ✅ |
+| Step 2 — body area chips render | ✅ |
+| Step 2 — monitored areas pre-highlighted (📍 Arms) | ✅ |
+| Step 3 — optional photo step renders | ✅ |
+| Step 3 — submit shows correct point total (+10 no photo, +15 with photo) | ✅ |
+| Submit writes FlareLog to AsyncStorage | ✅ Confirmed via store |
+| Points awarded (10 pts) | ✅ |
+| Confirmation screen shows earned + total | ✅ "You earned 10 points. Total: ⭐ 20" |
+| Child home points badge updates | ✅ ⭐ 10 after submit |
+| Prize Store button reflects new total | ✅ "Prize Store (10 pts)" |
+| TypeScript check | ✅ 0 errors |
+
+---
+
 **Known limitations (web only, not failures):**
 - `expo-secure-store` PIN uses `localStorage` on web — encrypted storage only on native
 - `Linking.openURL('tel:')` on emergency screen cannot open native dialer in browser — button presence only tested
