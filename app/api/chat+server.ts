@@ -8,8 +8,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { CHAT_SYSTEM } from '@/lib/prompts';
 import type { ChatRequest, ChatResponse, FlareLog } from '@/lib/types';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 function formatLogContext(logs: FlareLog[]): string {
   if (logs.length === 0) return 'No flare logs available yet.';
 
@@ -23,6 +21,7 @@ function formatLogContext(logs: FlareLog[]): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let body: ChatRequest;
 
   try {

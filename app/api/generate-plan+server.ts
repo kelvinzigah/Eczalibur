@@ -8,9 +8,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { GENERATE_PLAN_SYSTEM, GENERATE_PLAN_USER_TEMPLATE } from '@/lib/prompts';
 import type { ActionPlan, GeneratePlanRequest, GeneratePlanResponse } from '@/lib/types';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 export async function POST(request: Request): Promise<Response> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let body: GeneratePlanRequest;
 
   try {

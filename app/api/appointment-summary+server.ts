@@ -8,8 +8,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { APPOINTMENT_SUMMARY_SYSTEM, APPOINTMENT_SUMMARY_USER_TEMPLATE } from '@/lib/prompts';
 import type { AppointmentSummaryRequest, AppointmentSummaryResponse, FlareLog } from '@/lib/types';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 function computeLogSummary(logs: FlareLog[], appointmentDate: string) {
   if (logs.length === 0) {
     return {
@@ -64,6 +62,7 @@ function computeLogSummary(logs: FlareLog[], appointmentDate: string) {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let body: AppointmentSummaryRequest;
 
   try {
