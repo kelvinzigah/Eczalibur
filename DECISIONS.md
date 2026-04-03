@@ -91,3 +91,26 @@
 **Decision:** The Red zone emergency screen (`app/(child)/emergency.tsx`) replaces the entire screen via `router.replace`, not a modal overlay.
 
 **Rationale:** For a child in distress, fullscreen red creates maximum visual urgency and eliminates the possibility of accidentally dismissing it. Parent must explicitly dismiss from a dedicated button.
+
+---
+
+## Phase 8b — Native Compatibility
+
+### D-013: Use expo-crypto instead of global crypto API
+**Decision:** All `crypto.randomUUID()` calls in React Native code use `ExpoCrypto.randomUUID()` from `expo-crypto`.
+
+**Rationale:** The global `crypto.randomUUID()` is a Web API; it is available in browsers and Node.js but not reliably in the React Native / Hermes runtime (especially inside Expo Go). `expo-crypto` provides a cross-platform implementation.
+
+---
+
+### D-014: In-memory fallback for AsyncStorage
+**Decision:** `lib/storage.ts` maintains a `Map<string, string>` mirror of all writes. If AsyncStorage native module throws (native module null), reads fall back to the map and writes are silently skipped for the native layer.
+
+**Rationale:** React Native JS bundle version (0.81.5) and Expo Go SDK 54 native runtime (0.79.x) have a minor version mismatch that causes `RNCAsyncStorage` to be unregistered. The fallback lets the full app run correctly within a session; data doesn't survive cold restarts but this is acceptable for hackathon demos and dev testing.
+
+---
+
+### D-015: Pin expo-crypto and async-storage via npm overrides
+**Decision:** `package.json` uses `"overrides"` to pin `expo-crypto` to `~13.0.2` and `@react-native-async-storage/async-storage` to `2.2.0`.
+
+**Rationale:** `@clerk/clerk-expo` transitively pulls in `expo-crypto@55.x` (the SDK 55 version). Expo Go SDK 54 doesn't include the v55 native module. The override forces the SDK-54-compatible version across all transitive dependencies without modifying any third-party package.

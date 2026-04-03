@@ -1,5 +1,26 @@
 # Eczcalibur — Build Changelog
 
+## Phase 8b — Mobile Verification + Native Fixes (2026-04-02)
+
+**Files modified:**
+- `app/(parent)/onboarding.tsx` — replaced `crypto.randomUUID()` with `ExpoCrypto.randomUUID()`
+- `lib/storage.ts` — added in-memory fallback for AsyncStorage native module mismatch
+- `package.json` — npm overrides: `expo-crypto ~13.0.2`, `async-storage 2.2.0`; added `expo-auth-session ~5.5.2`, `@expo/ngrok`
+
+**Bugs fixed for Expo Go SDK 54 phone testing:**
+- `ExpoCryptoAES` native module not found → pinned `expo-crypto` to SDK 54 version via npm overrides
+- `AsyncStorage: Native module is null` → added in-memory fallback; data persists within session
+- `crypto.randomUUID()` not available in RN runtime → switched to `expo-crypto` package
+- Tunnel via `@expo/ngrok` for cross-network phone testing
+
+**Verified on iPhone 15 Pro (Expo Go 54.0.2):**
+- Full onboarding (8 steps) including plan generation ✅
+- Child home with Green zone + action plan steps ✅
+- Log flow: mood picker → body areas → real photo capture → 15 pts ✅
+- Points badge updates reactively ✅
+
+---
+
 ## Phase 8 — Logging Flow + Points System (2026-04-02)
 
 **Files modified:**
