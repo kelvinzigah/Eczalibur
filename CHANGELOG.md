@@ -1,5 +1,21 @@
 # Eczcalibur — Build Changelog
 
+## Phase 10 — Store UI + Prize Redemption + Parent Approval Queue (2026-04-02)
+
+**Files modified:**
+- `app/(child)/store.tsx` — full implementation replacing stub: FlatList of active prizes, each card shows icon/name/description/cost + Redeem button; canAfford check (greyed cost if insufficient); pending guard (⏳ Pending if already requested); Alert confirms request sent
+- `app/(parent)/dashboard.tsx` — added redemption queue section: shows pending requests with Approve (green) / Deny (red border) buttons; Deny refunds points via `awardPoints(pointCost)`
+
+**Features:**
+- `requestRedemption()` + `spendPoints()` called atomically on redeem
+- `resolveRedemption()` + `awardPoints()` on parent deny (refund)
+- Empty state ("No prizes yet — ask your parent to add prizes")
+- Pending redemptions footer on store screen
+
+**TypeScript:** 0 errors
+
+---
+
 ## Phase 9 — Parent Dashboard + Pre-Appointment Summary + Claude Chat (2026-04-02)
 
 **Files created:**
