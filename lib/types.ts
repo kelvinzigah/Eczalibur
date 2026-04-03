@@ -89,8 +89,10 @@ export interface FlareLog {
   affectedAreas: BodyArea[];
   /** Optional child notes */
   notes: string;
-  /** Base64-encoded photo URI (optional) */
+  /** Primary photo URI (first in photoUris, kept for compat) */
   photoUri: string | null;
+  /** Up to 3 photo URIs captured during this log */
+  photoUris?: string[];
   /** Points awarded for logging this flare */
   pointsAwarded: number;
 }

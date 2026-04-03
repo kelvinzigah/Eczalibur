@@ -67,9 +67,9 @@ export default function ChildLayout() {
         <Tabs.Screen
           name="log"
           options={{
-            title: 'Hero',
+            title: 'Log',
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="person" size={size} color={color} />
+              <MaterialIcons name="article" size={size} color={color} />
             ),
           }}
         />

@@ -14,10 +14,14 @@ import {
   appendFlareLog,
   clearAll,
   hydrateAll,
+  readQuestCompletions,
+  writeFlareLogs,
   writePoints,
   writePrizes,
   writeProfile,
+  writeQuestCompletions,
   writeRedemptions,
+  type QuestCompletions,
 } from '@/lib/storage';
 import type {
   ActionPlan,
@@ -36,6 +40,9 @@ interface AppStore extends AppState {
   /** True once hydrateAll() has completed. */
   isHydrated: boolean;
 
+  /** Persisted set of completed quest indices per zone. */
+  questCompletions: Required<QuestCompletions>;
+
   // Lifecycle
   hydrate: () => Promise<void>;
   reset: () => Promise<void>;
@@ -47,6 +54,7 @@ interface AppStore extends AppState {
 
   // Flare logs
   addFlareLog: (log: FlareLog) => Promise<void>;
+  resetDailyLogs: () => Promise<void>;
 
   // Points
   awardPoints: (amount: number) => Promise<void>;
@@ -55,11 +63,16 @@ interface AppStore extends AppState {
   // Prizes
   setPrizes: (prizes: Prize[]) => Promise<void>;
   addPrize: (prize: Prize) => Promise<void>;
+  updatePrize: (prizeId: string, updates: Partial<Pick<Prize, 'name' | 'description' | 'icon' | 'pointCost' | 'isActive'>>) => Promise<void>;
+  removePrize: (prizeId: string) => Promise<void>;
   togglePrize: (prizeId: string, isActive: boolean) => Promise<void>;
 
   // Redemptions
   requestRedemption: (request: RedemptionRequest) => Promise<void>;
   resolveRedemption: (requestId: string, status: 'approved' | 'denied') => Promise<void>;
+
+  // Quest completions
+  completeQuest: (zone: Zone, questIndex: number) => Promise<void>;
 
   // Derived helpers
   currentZone: () => Zone;
@@ -67,13 +80,16 @@ interface AppStore extends AppState {
 
 // ─── Initial state ────────────────────────────────────────────────────────────
 
-const INITIAL_STATE: AppState & { isHydrated: boolean } = {
+const EMPTY_COMPLETIONS: Required<QuestCompletions> = { green: [], yellow: [], red: [] };
+
+const INITIAL_STATE: AppState & { isHydrated: boolean; questCompletions: Required<QuestCompletions> } = {
   isHydrated: false,
   profile: null,
   flareLogs: [],
   prizes: [],
   redemptions: [],
   points: { total: 0, earned: 0, spent: 0 },
+  questCompletions: EMPTY_COMPLETIONS,
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -84,8 +100,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ── Lifecycle ──
 
   async hydrate() {
-    const state = await hydrateAll();
-    set({ ...state, isHydrated: true });
+    const [state, completions] = await Promise.all([hydrateAll(), readQuestCompletions()]);
+    set({
+      ...state,
+      isHydrated: true,
+      questCompletions: {
+        green:  completions.green  ?? [],
+        yellow: completions.yellow ?? [],
+        red:    completions.red    ?? [],
+      },
+    });
   },
 
   async reset() {
@@ -128,6 +152,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ flareLogs: updated });
   },
 
+  async resetDailyLogs() {
+    const today = new Date().toDateString();
+    const updated = get().flareLogs.filter(
+      (l) => new Date(l.timestamp).toDateString() !== today,
+    );
+    await writeFlareLogs(updated);
+    set({ flareLogs: updated });
+  },
+
   // ── Points ──
 
   async awardPoints(amount) {
@@ -165,6 +198,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ prizes: updated });
   },
 
+  async updatePrize(prizeId, updates) {
+    const updated = get().prizes.map((p) =>
+      p.id === prizeId ? { ...p, ...updates } : p,
+    );
+    await writePrizes(updated);
+    set({ prizes: updated });
+  },
+
+  async removePrize(prizeId) {
+    const updated = get().prizes.filter((p) => p.id !== prizeId);
+    await writePrizes(updated);
+    set({ prizes: updated });
+  },
+
   async togglePrize(prizeId, isActive) {
     const updated = get().prizes.map((p) =>
       p.id === prizeId ? { ...p, isActive } : p,
@@ -189,6 +236,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
     await writeRedemptions(updated);
     set({ redemptions: updated });
+  },
+
+  // ── Quest completions ──
+
+  async completeQuest(zone, questIndex) {
+    const prev = get().questCompletions;
+    if (prev[zone].includes(questIndex)) return;
+    const updated: Required<QuestCompletions> = {
+      ...prev,
+      [zone]: [...prev[zone], questIndex],
+    };
+    await writeQuestCompletions(updated);
+    set({ questCompletions: updated });
   },
 
   // ── Derived ──

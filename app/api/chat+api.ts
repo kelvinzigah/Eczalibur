@@ -5,21 +5,9 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { buildChatLogContext } from '@/lib/logContext';
 import { CHAT_SYSTEM } from '@/lib/prompts';
-import type { ChatRequest, ChatResponse, FlareLog } from '@/lib/types';
-
-function formatLogContext(logs: FlareLog[]): string {
-  if (logs.length === 0) return 'No flare logs available yet.';
-
-  const recent = logs.slice(-10);
-  const lines = recent.map((log) => {
-    const date = new Date(log.timestamp).toLocaleDateString();
-    const notes = log.notes ? `[child-entered, unverified] ${log.notes}` : 'none';
-    return `[${date}] Zone: ${log.zone.toUpperCase()} | Mood/itch: ${log.moodScore}/5 | Areas: ${log.affectedAreas.join(', ')} | Notes: ${notes}`;
-  });
-
-  return `Recent flare log (last ${recent.length} entries):\n${lines.join('\n')}`;
-}
+import type { ChatRequest, ChatResponse } from '@/lib/types';
 
 export async function POST(request: Request): Promise<Response> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -38,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const logContext = formatLogContext(recentLogs ?? []);
+    const logContext = buildChatLogContext(recentLogs ?? []);
     const systemWithContext = `${CHAT_SYSTEM}\n\n---\nCHILD PROFILE:\nName: ${profile.name}, Age: ${profile.age}, Diagnosis: ${profile.diagnosis}\nMedications: ${profile.medications.map((m) => m.name).join(', ')}\nKnown triggers: ${profile.triggers.join(', ') || 'none'}\n\n${logContext}`;
 
     const stream = client.messages.stream({

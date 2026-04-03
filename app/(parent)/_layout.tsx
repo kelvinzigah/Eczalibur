@@ -75,6 +75,10 @@ export default function ParentLayout() {
         name="onboarding"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

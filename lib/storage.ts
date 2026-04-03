@@ -22,6 +22,7 @@ const KEYS = {
   PRIZES: 'eczcalibur:prizes',
   REDEMPTIONS: 'eczcalibur:redemptions',
   POINTS: 'eczcalibur:points',
+  QUEST_COMPLETIONS: 'eczcalibur:quest_completions',
 } as const;
 
 // ─── Memory fallback ──────────────────────────────────────────────────────────
@@ -122,6 +123,18 @@ export async function readPoints(): Promise<PointsLedger> {
 
 export async function writePoints(points: PointsLedger): Promise<void> {
   return write(KEYS.POINTS, points);
+}
+
+// ─── Quest Completions ────────────────────────────────────────────────────────
+
+export type QuestCompletions = Partial<Record<'green' | 'yellow' | 'red', number[]>>;
+
+export async function readQuestCompletions(): Promise<QuestCompletions> {
+  return (await read<QuestCompletions>(KEYS.QUEST_COMPLETIONS)) ?? {};
+}
+
+export async function writeQuestCompletions(completions: QuestCompletions): Promise<void> {
+  return write(KEYS.QUEST_COMPLETIONS, completions);
 }
 
 // ─── Full hydration ───────────────────────────────────────────────────────────

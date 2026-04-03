@@ -1,5 +1,35 @@
 # Eczcalibur — Build Changelog
 
+## Phase 13 — UI Redesign + Log Overhaul + Parent Settings (2026-04-03)
+
+**TypeScript: 0 errors.**
+
+**Files created:**
+- `assets/images/hero-male.jpg` — Zelda-style pixel art male hero background scene
+- `assets/images/hero-female.jpg` — Zelda-style pixel art female hero background scene
+- `lib/logContext.ts` — shared `buildChatLogContext()` utility: 3-section Claude context (pattern header + summary + last 30 entries)
+- `app/(parent)/settings.tsx` — new settings screen: reset daily logs, reset & re-onboard, prize store editor
+
+**Files modified:**
+- `app/(child)/home.tsx` — full redesign: `ImageBackground` hero scene (gender-matched pixel art), top bar moved above image, 2-column quest grid, quest detail modal (full text + complete button + +10 gold), View All modal, quest completion persists across sessions
+- `app/(child)/_layout.tsx` — log tab renamed "Log", icon changed to `article`
+- `app/(child)/log.tsx` — full restyle to match theme system; multi-photo (up to 3, +5 pts each); 10-minute cooldown countdown after each log; daily limit guard screen; cooldown persists on tab navigation
+- `app/(parent)/dashboard.tsx` — sign-out button replaced with settings icon; reset button removed
+- `app/(parent)/_layout.tsx` — settings screen added as hidden tab
+- `app/api/chat+api.ts` — `formatLogContext` replaced with `buildChatLogContext` (3-section rich context: pattern header, summary, last 30 entries vs. previous last 10 raw lines)
+- `lib/storage.ts` — added `QUEST_COMPLETIONS` key + `readQuestCompletions`/`writeQuestCompletions`
+- `lib/types.ts` — `FlareLog.photoUris?: string[]` added; `ChatRequest.recentLogs` updated
+- `store/useAppStore.ts` — added `questCompletions` state + `completeQuest()`, `resetDailyLogs()`, `updatePrize()`, `removePrize()`
+
+**Features:**
+- Quest completions persist per zone across app restarts (AsyncStorage-backed)
+- Claude chat now receives: dominant zone, top affected areas, avg itch score, red count, top flare day + last 30 individual entries
+- Parent settings: prize CRUD (add/edit/remove, 6 max), reset daily logs (points unaffected), reset & re-onboard, sign out
+
+**Score impact:** estimated ~86/100 (up from 83–85 after UI + context quality improvements)
+
+---
+
 ## Phase 12 — Security Hardening + Onboarding Restructure (2026-04-03)
 
 **All 5 critical audit issues resolved. TypeScript: 0 errors.**

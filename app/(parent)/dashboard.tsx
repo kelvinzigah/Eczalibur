@@ -1,7 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/clerk-expo';
 import { router, Redirect } from 'expo-router';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppStore } from '@/store/useAppStore';
 import type { RedemptionRequest, Zone } from '@/lib/types';
@@ -13,9 +12,8 @@ const ZONE_CONFIG: Record<Zone, { label: string; color: string; bg: string; bord
 };
 
 export default function ParentDashboard() {
-  const { signOut } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
-  const { isHydrated, profile, flareLogs, points, redemptions, currentZone, resolveRedemption, awardPoints, reset } =
+  const { isHydrated, profile, flareLogs, points, redemptions, currentZone, resolveRedemption, awardPoints } =
     useAppStore();
 
   if (!isHydrated) {
@@ -51,8 +49,8 @@ export default function ParentDashboard() {
           <MaterialIcons name={isDark ? 'light-mode' : 'dark-mode'} size={22} color={theme.green} />
         </TouchableOpacity>
         <Text style={[styles.topTitle, { color: theme.green }]}>ECZCALIBUR</Text>
-        <TouchableOpacity onPress={() => signOut()}>
-          <MaterialIcons name="logout" size={22} color={theme.textMuted} />
+        <TouchableOpacity onPress={() => router.push('/(parent)/settings')}>
+          <MaterialIcons name="settings" size={22} color={theme.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -119,23 +117,6 @@ export default function ParentDashboard() {
       >
         <MaterialIcons name="child-care" size={20} color={theme.green} />
         <Text style={[styles.childViewText, { color: theme.green }]}>Switch to Child View</Text>
-      </TouchableOpacity>
-
-      {/* Dev reset */}
-      <TouchableOpacity
-        style={[styles.resetBtn, { borderColor: theme.zoneRed }]}
-        onPress={() =>
-          Alert.alert(
-            'Reset all data?',
-            'This will wipe the profile, logs, points, and prizes — returning to onboarding.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Reset', style: 'destructive', onPress: () => reset() },
-            ]
-          )
-        }
-      >
-        <Text style={[styles.resetText, { color: theme.zoneRed }]}>Reset & Re-onboard</Text>
       </TouchableOpacity>
 
     </ScrollView>
