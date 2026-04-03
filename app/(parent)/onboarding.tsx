@@ -44,6 +44,7 @@ export default function OnboardingScreen() {
   // Step 2 — child details
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'neutral'>('neutral');
   const [location, setLocation] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
 
@@ -147,6 +148,7 @@ export default function OnboardingScreen() {
         id: profileId,
         name: childName,
         age: parseInt(childAge, 10) || 10,
+        gender,
         location,
         diagnosis,
         medications: medications.filter((m) => m.name.trim()),
@@ -229,6 +231,24 @@ export default function OnboardingScreen() {
 
             <Text style={styles.label}>Age (years)</Text>
             <TextInput style={styles.input} value={childAge} onChangeText={setChildAge} placeholder="E.g. 9" placeholderTextColor="#555" keyboardType="number-pad" maxLength={2} />
+
+            <Text style={styles.label}>Hero Type</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+              {([['male', '🧝‍♂️ Boy'], ['female', '🧝‍♀️ Girl'], ['neutral', '🧙 Other']] as const).map(([val, label]) => (
+                <TouchableOpacity
+                  key={val}
+                  style={[
+                    styles.genderPill,
+                    gender === val && { borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.1)' },
+                  ]}
+                  onPress={() => setGender(val)}
+                >
+                  <Text style={[styles.genderPillText, gender === val && { color: '#FFD700' }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <Text style={styles.label}>City / Region</Text>
             <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="E.g. Montreal" placeholderTextColor="#555" />
@@ -450,6 +470,20 @@ const styles = StyleSheet.create({
   prizeIcon: { fontSize: 28 },
   prizeInput: { color: '#fff', fontSize: 15, borderBottomWidth: 1, borderColor: '#3a3a5e', paddingBottom: 4, marginBottom: 4 },
   prizeCost: { color: '#FFD700', fontSize: 12 },
+  // Gender picker
+  genderPill: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#3a3a5e',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  genderPillText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   // Nav
   navRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingTop: 24 },
   backButton: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3a3a5e' },

@@ -1,5 +1,4 @@
 import * as ExpoCrypto from 'expo-crypto';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,18 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 import { useAppStore } from '@/store/useAppStore';
 import type { Prize, RedemptionRequest } from '@/lib/types';
 
 export default function StoreScreen() {
+  const { theme, isDark, toggleTheme } = useTheme();
   const { isHydrated, prizes, points, redemptions, profile, requestRedemption, spendPoints } =
     useAppStore();
   const [redeeming, setRedeeming] = useState<string | null>(null);
 
   if (!isHydrated || !profile) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator color="#FFD700" size="large" />
+      <View style={[styles.loading, { backgroundColor: theme.bgPrimary }]}>
+        <ActivityIndicator color={theme.gold} size="large" />
       </View>
     );
   }
@@ -37,8 +38,8 @@ export default function StoreScreen() {
     if (!profile) return;
     if (points.total < prize.pointCost) {
       Alert.alert(
-        'Not enough points',
-        `You need ⭐ ${prize.pointCost} but only have ⭐ ${points.total}. Keep logging to earn more!`,
+        'Not enough gold',
+        `You need 🪙 ${prize.pointCost} but only have 🪙 ${points.total}. Keep completing quests to earn more!`,
       );
       return;
     }
@@ -68,15 +69,16 @@ export default function StoreScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>←</Text>
+    <View style={[styles.screen, { backgroundColor: theme.bgPrimary }]}>
+
+      {/* Top Bar */}
+      <View style={[styles.topBar, { backgroundColor: theme.bgNav }]}>
+        <TouchableOpacity onPress={toggleTheme}>
+          <Text style={{ fontSize: 18 }}>{isDark ? '☀️' : '🌙'}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>🏆 Prize Store</Text>
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsText}>⭐ {points.total}</Text>
+        <Text style={[styles.topTitle, { color: theme.gold }]}>PRIZE STORE</Text>
+        <View style={[styles.goldBadge, { borderColor: theme.gold }]}>
+          <Text style={[styles.goldText, { color: theme.gold }]}>🪙 {points.total}</Text>
         </View>
       </View>
 
@@ -84,8 +86,8 @@ export default function StoreScreen() {
       {activePrizes.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>🎁</Text>
-          <Text style={styles.emptyTitle}>No prizes yet</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: theme.gold }]}>No prizes yet</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textMuted }]}>
             Ask your parent to add prizes in the dashboard!
           </Text>
         </View>
@@ -100,30 +102,49 @@ export default function StoreScreen() {
             const isLoading = redeeming === item.id;
 
             return (
-              <View style={styles.prizeCard}>
+              <View
+                style={[
+                  styles.prizeCard,
+                  { backgroundColor: theme.bgCard, borderColor: theme.border },
+                ]}
+              >
                 <Text style={styles.prizeIcon}>{item.icon}</Text>
                 <View style={styles.prizeInfo}>
-                  <Text style={styles.prizeName}>{item.name}</Text>
+                  <Text style={[styles.prizeName, { color: theme.textPrimary }]}>{item.name}</Text>
                   {item.description ? (
-                    <Text style={styles.prizeDesc}>{item.description}</Text>
+                    <Text style={[styles.prizeDesc, { color: theme.textMuted }]}>
+                      {item.description}
+                    </Text>
                   ) : null}
-                  <Text style={[styles.prizeCost, !canAfford && styles.prizeCostInsufficient]}>
-                    ⭐ {item.pointCost} pts
+                  <Text
+                    style={[
+                      styles.prizeCost,
+                      { color: canAfford ? theme.gold : theme.textMuted },
+                    ]}
+                  >
+                    🪙 {item.pointCost} pts
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={[
                     styles.redeemBtn,
-                    (pending || !canAfford || isLoading) && styles.redeemBtnDisabled,
+                    pending || !canAfford || isLoading
+                      ? [styles.redeemBtnDisabled, { backgroundColor: theme.bgSurface }]
+                      : { backgroundColor: theme.gold },
                   ]}
                   onPress={() => handleRedeem(item)}
                   disabled={pending || isLoading}
                   activeOpacity={0.8}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color="#1a1a2e" />
+                    <ActivityIndicator size="small" color={theme.bgNav} />
                   ) : (
-                    <Text style={styles.redeemBtnText}>
+                    <Text
+                      style={[
+                        styles.redeemBtnText,
+                        { color: pending || !canAfford ? theme.textMuted : theme.bgNav },
+                      ]}
+                    >
                       {pending ? '⏳ Pending' : 'Redeem'}
                     </Text>
                   )}
@@ -136,15 +157,18 @@ export default function StoreScreen() {
 
       {/* Pending requests footer */}
       {pendingRedemptions.length > 0 && (
-        <View style={styles.pendingFooter}>
-          <Text style={styles.pendingTitle}>Waiting for parent approval</Text>
+        <View style={[styles.pendingFooter, { backgroundColor: theme.bgCard, borderColor: theme.gold }]}>
+          <Text style={[styles.pendingTitle, { color: theme.gold }]}>
+            Waiting for parent approval
+          </Text>
           {pendingRedemptions.map((r) => (
-            <Text key={r.id} style={styles.pendingItem}>
-              • {r.prizeName} (⭐ {r.pointCost})
+            <Text key={r.id} style={[styles.pendingItem, { color: theme.textPrimary }]}>
+              • {r.prizeName} (🪙 {r.pointCost})
             </Text>
           ))}
         </View>
       )}
+
     </View>
   );
 }
@@ -152,36 +176,44 @@ export default function StoreScreen() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  screen: { flex: 1, backgroundColor: '#1a1a2e' },
-  header: {
+  screen: { flex: 1 },
+
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 56,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 52,
+    paddingBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 0,
+    elevation: 8,
   },
-  back: { color: '#FFD700', fontSize: 22, fontWeight: 'bold', paddingRight: 4 },
-  title: { color: '#FFD700', fontSize: 22, fontWeight: 'bold', flex: 1 },
-  pointsBadge: {
-    backgroundColor: '#2a2a3e',
-    borderRadius: 20,
+  topTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 4,
+  },
+  goldBadge: {
     borderWidth: 1,
-    borderColor: '#FFD700',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  pointsText: { color: '#FFD700', fontSize: 14, fontWeight: 'bold' },
-  listContent: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
+  goldText: { fontWeight: '700', fontSize: 13 },
+
+  listContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, gap: 12 },
+
   prizeCard: {
-    backgroundColor: '#2a2a3e',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#3a3a5e',
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -189,20 +221,20 @@ const styles = StyleSheet.create({
   },
   prizeIcon: { fontSize: 36 },
   prizeInfo: { flex: 1, gap: 2 },
-  prizeName: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  prizeDesc: { color: '#aaa', fontSize: 13 },
-  prizeCost: { color: '#FFD700', fontSize: 13, fontWeight: '600', marginTop: 4 },
-  prizeCostInsufficient: { color: '#666' },
+  prizeName: { fontSize: 16, fontWeight: 'bold' },
+  prizeDesc: { fontSize: 13 },
+  prizeCost: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+
   redeemBtn: {
-    backgroundColor: '#FFD700',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
     minWidth: 80,
     alignItems: 'center',
   },
-  redeemBtnDisabled: { backgroundColor: '#3a3a5e' },
-  redeemBtnText: { color: '#1a1a2e', fontSize: 13, fontWeight: 'bold' },
+  redeemBtnDisabled: {},
+  redeemBtnText: { fontSize: 13, fontWeight: 'bold' },
+
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -211,18 +243,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: { fontSize: 56 },
-  emptyTitle: { color: '#FFD700', fontSize: 20, fontWeight: 'bold' },
-  emptySubtitle: { color: '#666', fontSize: 14, textAlign: 'center' },
+  emptyTitle: { fontSize: 20, fontWeight: 'bold' },
+  emptySubtitle: { fontSize: 14, textAlign: 'center' },
+
   pendingFooter: {
     margin: 20,
     marginTop: 0,
-    backgroundColor: '#2a2a3e',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FFD700',
     padding: 14,
     gap: 6,
   },
-  pendingTitle: { color: '#FFD700', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
-  pendingItem: { color: '#ccc', fontSize: 13 },
+  pendingTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  pendingItem: { fontSize: 13 },
 });

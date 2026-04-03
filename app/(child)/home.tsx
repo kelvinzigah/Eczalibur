@@ -1,177 +1,320 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 import { useAppStore } from '@/store/useAppStore';
 import type { Zone } from '@/lib/types';
 
-const ZONE_CONFIG: Record<Zone, { bg: string; border: string; label: string; emoji: string; questTitle: string }> = {
-  green: {
-    bg: '#0d2b0d',
-    border: '#4ade80',
-    label: 'GREEN ZONE',
-    emoji: '🟢',
-    questTitle: 'Quest Active — Controlled!',
-  },
-  yellow: {
-    bg: '#2b2200',
-    border: '#FFD700',
-    label: 'YELLOW ZONE',
-    emoji: '🟡',
-    questTitle: 'Watch Out — Flare Starting!',
-  },
-  red: {
-    bg: '#2b0000',
-    border: '#ff4444',
-    label: 'RED ZONE',
-    emoji: '🔴',
-    questTitle: 'DANGER — Flare Active!',
-  },
+// ─── Zone config ──────────────────────────────────────────────────────────────
+
+const REALM_NAMES: Record<Zone, string> = {
+  green: 'Forest of Freshness',
+  yellow: 'Flare Marshes',
+  red: 'Danger Keep',
 };
 
-const FALLBACK_STEPS = {
-  green: ['Keep up your moisturising routine', 'Stay cool and avoid your triggers', 'Log how you\'re feeling each day'],
-  yellow: ['Apply your yellow zone cream now', 'Tell a parent your skin is acting up', 'Avoid scratching — try a cold cloth instead'],
-  red: ['Tell a parent or trusted adult RIGHT NOW', 'Apply your red zone medication immediately', 'Do NOT scratch — get help'],
+const FALLBACK_STEPS: Record<Zone, string[]> = {
+  green: [
+    'Keep up your moisturising routine every day',
+    'Stay cool and avoid your known triggers',
+    'Drink plenty of water to hydrate your skin',
+    'Wear soft, breathable clothes today',
+    'Log how you\'re feeling to earn gold',
+  ],
+  yellow: [
+    'Apply your yellow zone cream right now',
+    'Tell a parent your skin is acting up',
+    'Avoid scratching — try a cool cloth on the area',
+    'Stay out of the heat and direct sun',
+    'Log this flare to earn gold',
+  ],
+  red: [
+    'Tell a parent or trusted adult RIGHT NOW',
+    'Apply your red zone medication immediately',
+    'Do NOT scratch — use a cold cloth instead',
+    'Stay calm and press the Flare-Up button below',
+    'Rest in a cool, quiet place while help comes',
+  ],
 };
 
-export default function ChildHome() {
-  const { profile, points, currentZone } = useAppStore();
-  const zone = currentZone();
-  const config = ZONE_CONFIG[zone];
-  const plan = profile?.actionPlan;
-  const steps = plan ? plan[zone].childInstructions : FALLBACK_STEPS[zone];
-  const childName = profile?.name ?? 'Hero';
+// Step icons cycling through quest types
+type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
+const STEP_ICONS: IconName[] = ['healing', 'opacity', 'hotel', 'star', 'security'];
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function HeartGauge({ zone }: { zone: Zone }) {
+  const { theme } = useTheme();
+  const filled = zone === 'green' ? 5 : zone === 'yellow' ? 3 : 1;
   return (
-    <View style={[styles.screen, { backgroundColor: config.bg }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>⚔️ {childName}'s Quest</Text>
-          <View style={styles.pointsBadge}>
-            <Text style={styles.pointsText}>⭐ {points.total}</Text>
-          </View>
-        </View>
-
-        {/* Zone Banner */}
-        <View style={[styles.zoneBanner, { borderColor: config.border }]}>
-          <Text style={styles.zoneEmoji}>{config.emoji}</Text>
-          <Text style={[styles.zoneLabel, { color: config.border }]}>{config.label}</Text>
-          <Text style={styles.zoneTitle}>{config.questTitle}</Text>
-        </View>
-
-        {/* Quest Steps */}
-        <View style={styles.stepsContainer}>
-          <Text style={styles.stepsHeader}>🗺️ YOUR QUEST STEPS</Text>
-          {steps.map((step, i) => (
-            <View key={i} style={[styles.stepCard, { borderLeftColor: config.border }]}>
-              <Text style={[styles.stepNumber, { color: config.border }]}>{i + 1}</Text>
-              <Text style={styles.stepText}>{step}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Action buttons */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.planButton}
-            onPress={() => router.push('/(child)/plan')}
-          >
-            <Text style={styles.planButtonText}>📜 View Full Action Plan</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.logButton}
-            onPress={() => router.push('/(child)/log')}
-          >
-            <Text style={styles.logButtonText}>📝 Log How I Feel (+10 pts)</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.storeButton}
-            onPress={() => router.push('/(child)/store')}
-          >
-            <Text style={styles.storeButtonText}>🏆 Prize Store ({points.total} pts)</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Back to parent */}
-        <TouchableOpacity style={styles.parentLink} onPress={() => router.replace('/(parent)/dashboard')}>
-          <Text style={styles.parentLinkText}>← Parent View</Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-
-      {/* Emergency button — fixed at bottom */}
-      <TouchableOpacity
-        style={styles.emergencyButton}
-        onPress={() => router.push('/(child)/emergency')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.emergencyText}>🚨  MY SKIN IS BAD — GET HELP</Text>
-      </TouchableOpacity>
+    <View style={styles.hearts}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <MaterialIcons
+          key={i}
+          name={i <= filled ? 'favorite' : 'favorite-border'}
+          size={18}
+          color={i <= filled ? '#ef4444' : theme.purpleDim}
+        />
+      ))}
     </View>
   );
 }
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function ChildHome() {
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { profile, points, flareLogs, currentZone } = useAppStore();
+
+  const zone = currentZone();
+  const childName = profile?.name ?? 'Hero';
+  const gender = profile?.gender;
+  const steps = profile?.actionPlan
+    ? profile.actionPlan[zone].childInstructions
+    : FALLBACK_STEPS[zone];
+  const level = Math.max(1, Math.floor(flareLogs.length / 3) + 1);
+  const heroEmoji = gender === 'male' ? '🧝‍♂️' : gender === 'female' ? '🧝‍♀️' : '🧙';
+
+  return (
+    <View style={[styles.screen, { backgroundColor: theme.bgPrimary }]}>
+
+      {/* ── Top Bar ── */}
+      <View style={[styles.topBar, { backgroundColor: theme.bgNav }]}>
+        <TouchableOpacity onPress={toggleTheme}>
+          <MaterialIcons name={isDark ? 'light-mode' : 'dark-mode'} size={22} color={theme.green} />
+        </TouchableOpacity>
+        <Text style={[styles.topTitle, { color: theme.green }]}>QUEST LOG</Text>
+        <View style={[styles.goldBadge, { borderColor: theme.gold }]}>
+          <Text style={[styles.goldText, { color: theme.gold }]}>🪙 {points.total}</Text>
+        </View>
+      </View>
+
+      {/* ── Status Banner ── */}
+      <View style={[styles.statusBanner, { backgroundColor: 'rgba(10,106,29,0.20)', borderBottomColor: theme.border }]}>
+        <Text style={[styles.realmName, { color: theme.textPrimary }]}>
+          {REALM_NAMES[zone]}
+        </Text>
+        <HeartGauge zone={zone} />
+      </View>
+
+      {/* ── Scrollable content ── */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+        {/* Hero Canvas */}
+        <View style={styles.heroSection}>
+          <View style={[styles.heroGlow, { backgroundColor: theme.purple }]} />
+          <Text style={styles.heroEmoji}>{heroEmoji}</Text>
+          <Text style={[styles.heroName, { color: theme.green }]}>
+            {childName.toUpperCase()}
+          </Text>
+          <Text style={[styles.heroLevel, { color: theme.gold }]}>
+            LEVEL {level} FOREST GUARDIAN
+          </Text>
+        </View>
+
+        {/* Quest section header */}
+        <View style={styles.questHeader}>
+          <Text style={[styles.questTitle, { color: theme.textPrimary }]}>ACTIVE QUESTS</Text>
+          <Text style={[styles.questCount, { color: theme.gold }]}>{steps.length} quests</Text>
+        </View>
+
+        {/* Horizontal quest cards */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.questList}
+        >
+          {steps.map((step, i) => {
+            const icon = STEP_ICONS[i % STEP_ICONS.length];
+            return (
+              <View
+                key={i}
+                style={[styles.questCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+              >
+                <View style={[styles.questIconBg, { backgroundColor: theme.bgGlass }]}>
+                  <MaterialIcons name={icon} size={20} color={theme.green} />
+                </View>
+                <Text style={[styles.questText, { color: theme.textPrimary }]} numberOfLines={3}>
+                  {step}
+                </Text>
+                <View style={[styles.progressBg, { backgroundColor: theme.border }]}>
+                  <View style={[styles.progressFill, { backgroundColor: theme.green }]} />
+                </View>
+                <Text style={[styles.questReward, { color: theme.gold }]}>+10 🪙</Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Back to parent link */}
+        <TouchableOpacity
+          style={styles.parentLink}
+          onPress={() => router.replace('/(parent)/dashboard')}
+        >
+          <Text style={[styles.parentLinkText, { color: theme.textMuted }]}>← Parent View</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+
+      {/* ── FLARE-UP Button (pinned above tab bar) ── */}
+      <TouchableOpacity
+        style={[
+          styles.flareButton,
+          {
+            backgroundColor: theme.error,
+            shadowColor: theme.errorDark,
+          },
+        ]}
+        onPress={() => router.push('/(child)/emergency')}
+        activeOpacity={0.85}
+      >
+        <MaterialIcons name="warning" size={22} color="#fff" />
+        <Text style={styles.flareText}>FLARE-UP!</Text>
+      </TouchableOpacity>
+
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  scroll: { paddingBottom: 100, paddingHorizontal: 20, paddingTop: 56 },
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  greeting: { color: '#FFD700', fontSize: 18, fontWeight: 'bold' },
-  pointsBadge: { backgroundColor: '#2a2a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: '#FFD700' },
-  pointsText: { color: '#FFD700', fontWeight: 'bold', fontSize: 14 },
-
-  zoneBanner: {
-    borderWidth: 2,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  zoneEmoji: { fontSize: 40 },
-  zoneLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 3 },
-  zoneTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
-
-  stepsContainer: { marginBottom: 24 },
-  stepsHeader: { color: '#888', fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 12 },
-  stepCard: {
+  topBar: {
     flexDirection: 'row',
-    gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    alignItems: 'flex-start',
-  },
-  stepNumber: { fontSize: 16, fontWeight: 'bold', width: 20 },
-  stepText: { color: '#ddd', fontSize: 14, lineHeight: 20, flex: 1 },
-
-  actions: { gap: 10, marginBottom: 20 },
-  planButton: { backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: '#FFD700', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  planButtonText: { color: '#FFD700', fontWeight: '600', fontSize: 14 },
-  logButton: { backgroundColor: 'rgba(74,222,128,0.15)', borderWidth: 1, borderColor: '#4ade80', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  logButtonText: { color: '#4ade80', fontWeight: '600', fontSize: 14 },
-  storeButton: { backgroundColor: 'rgba(168,85,247,0.15)', borderWidth: 1, borderColor: '#a855f7', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  storeButtonText: { color: '#a855f7', fontWeight: '600', fontSize: 14 },
-
-  parentLink: { alignItems: 'center', paddingVertical: 12 },
-  parentLinkText: { color: '#444', fontSize: 13 },
-
-  emergencyButton: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#cc0000',
-    paddingVertical: 20,
     alignItems: 'center',
-    borderTopWidth: 2,
-    borderColor: '#ff4444',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 52,
+    paddingBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 0,
+    elevation: 8,
   },
-  emergencyText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
+  topTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 4,
+  },
+  goldBadge: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  goldText: { fontWeight: '700', fontSize: 13 },
+
+  statusBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  realmName: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  hearts: { flexDirection: 'row', gap: 4 },
+
+  scrollContent: { paddingBottom: 160 },
+
+  heroSection: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    position: 'relative',
+  },
+  heroGlow: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    opacity: 0.07,
+    top: 16,
+  },
+  heroEmoji: { fontSize: 88, lineHeight: 104 },
+  heroName: {
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: 3,
+    marginTop: 10,
+  },
+  heroLevel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: 5,
+    textTransform: 'uppercase',
+  },
+
+  questHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  questTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  questCount: { fontSize: 10, fontWeight: '700' },
+
+  questList: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
+
+  questCard: {
+    width: 160,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+  },
+  questIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questText: { fontSize: 12, fontWeight: '600', lineHeight: 18 },
+  progressBg: { height: 3, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 3, width: '10%', borderRadius: 2 },
+  questReward: { fontSize: 11, fontWeight: '700' },
+
+  parentLink: { alignItems: 'center', paddingVertical: 20 },
+  parentLinkText: { fontSize: 13 },
+
+  flareButton: {
+    position: 'absolute',
+    bottom: 90,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 18,
+    borderRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 8,
+  },
+  flareText: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 18,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
 });

@@ -1,5 +1,33 @@
 # Eczcalibur — Build Changelog
 
+## Phase 11 — Zelda-Style UI Redesign + Tab Navigation (2026-04-03)
+
+**Files created:**
+- `constants/theme.ts` — complete rewrite: dual-mode Zelda token set (`DARK` / `LIGHT`) with forest greens, gold, purple accents; `Colors` shim for boilerplate compatibility
+- `context/ThemeContext.tsx` — React context providing `isDark`, `theme`, `toggleTheme`; persists preference to AsyncStorage; falls back to system color scheme on first launch
+
+**Files modified:**
+- `lib/types.ts` — added `gender?: 'male' | 'female' | 'neutral'` to `ChildProfile`
+- `app/_layout.tsx` — wrapped root with `ThemeProvider`
+- `app/(child)/_layout.tsx` — replaced `<Slot>` with expo-router `<Tabs>` (QUESTS / STORE / HEALTH / HERO); emergency screen hidden from tab bar via `href: null`
+- `app/(parent)/_layout.tsx` — replaced `<Stack>` with `<Tabs>` (OVERVIEW / LOGS / REPORTS / CLAUDE); onboarding hidden from tab bar
+- `app/(child)/home.tsx` — full redesign: hero canvas (gender-matched emoji + radial glow + name + level), StatusBanner with heart gauge (5/3/1 hearts mapped to zone), horizontal quest card scroller, FLARE-UP button pinned above tab bar, gold coin badge
+- `app/(child)/store.tsx` — restyled: `useTheme()` throughout, TopBar, gold coin labels, no back button
+- `app/(child)/plan.tsx` — restyled: theme tokens, removed back button, "YOU ARE HERE" badge on active zone
+- `app/(child)/emergency.tsx` — restyled: pixel-cut shadow on call button, theme glass for reassurance box, urgent red retained
+- `app/(parent)/dashboard.tsx` — removed NavGrid (replaced by tabs), added "Switch to Child View" button + dev reset button, all colors via `useTheme()`
+- `app/(parent)/onboarding.tsx` — added gender picker in Step 2 (Boy / Girl / Other pill buttons); `gender` saved to profile
+
+**Design system:**
+- Dark: `#050805` bg, `#0d1f0d` cards, `#020b02` nav, `#4ade80` green, `#FFD700` gold, `#8b5cf6` purple
+- Light: `#f2f9ea` bg, `#ffffff` cards, `#1a4020` nav, `#0a6a1d` green, `#B8860B` gold, `#6d28d9` purple
+- Theme toggle persists across app restarts
+- Zero hardcoded colors in screen files — all via `theme.*` tokens
+
+**TypeScript:** 0 errors
+
+---
+
 ## Phase 10 — Store UI + Prize Redemption + Parent Approval Queue (2026-04-02)
 
 **Files modified:**

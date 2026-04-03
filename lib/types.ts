@@ -48,6 +48,8 @@ export interface ChildProfile {
   name: string;
   /** Age in years */
   age: number;
+  /** Hero character gender for child UI */
+  gender?: 'male' | 'female' | 'neutral';
   /** City or region for weather lookup */
   location: string;
   diagnosis: string;
