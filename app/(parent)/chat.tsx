@@ -101,7 +101,7 @@ export default function ChatScreen() {
       {/* Privacy banner */}
       <View style={[styles.disclosureBanner, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
         <Text style={[styles.disclosureText, { color: theme.textMuted }]}>
-          🔒 Your data is shared with Claude only for this conversation. Not stored on any server.
+          🔒 Your child's health data (profile, logs) is transmitted to Anthropic's API to generate responses. It is not stored by us or Anthropic after processing. By using this chat you consent on behalf of your child.
         </Text>
       </View>
 

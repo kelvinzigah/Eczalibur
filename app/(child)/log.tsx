@@ -13,7 +13,7 @@ import {
 import { useTheme } from '@/context/ThemeContext';
 import { BG, overlayColor } from '@/constants/backgrounds';
 import { useAppStore } from '@/store/useAppStore';
-import type { BodyArea, FlareLog } from '@/lib/types';
+import type { BodyArea, FlareLog, Zone } from '@/lib/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -118,11 +118,14 @@ export default function LogScreen() {
     // +5 per photo, base 10
     const earned = 10 + photoUris.length * 5;
 
+    // Derive zone from itch/mood severity — this is the mechanism that drives zone transitions
+    const derivedZone: Zone = moodScore <= 2 ? 'green' : moodScore === 3 ? 'yellow' : 'red';
+
     const log: FlareLog = {
       id:            `log_${Date.now()}`,
       childId:       profile?.id ?? 'unknown',
       timestamp:     new Date().toISOString(),
-      zone,
+      zone:          derivedZone,
       moodScore,
       affectedAreas: selectedAreas,
       notes:         '',

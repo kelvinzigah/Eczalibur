@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppStore } from '@/store/useAppStore';
+import type { FlareLog } from '@/lib/types';
 
 const FALLBACK_STEPS = [
   'Tell a parent or trusted adult RIGHT NOW',
@@ -13,10 +14,29 @@ const FALLBACK_STEPS = [
 
 export default function EmergencyScreen() {
   const { theme } = useTheme();
-  const { profile } = useAppStore();
+  const { profile, addFlareLog, awardPoints } = useAppStore();
   const plan = profile?.actionPlan;
   const steps = plan ? plan.red.childInstructions : FALLBACK_STEPS;
   const childName = profile?.name ?? 'Hero';
+
+  async function handleImOk() {
+    // Auto-log a red zone event so the zone system and parent dashboard reflect the flare
+    const log: FlareLog = {
+      id:            `log_emergency_${Date.now()}`,
+      childId:       profile?.id ?? 'unknown',
+      timestamp:     new Date().toISOString(),
+      zone:          'red',
+      moodScore:     5,
+      affectedAreas: [],
+      notes:         'Auto-logged via emergency screen',
+      photoUri:      null,
+      photoUris:     [],
+      pointsAwarded: 10,
+    };
+    await addFlareLog(log);
+    await awardPoints(10);
+    router.replace('/(child)/home');
+  }
 
   return (
     <View style={[styles.screen, { backgroundColor: '#1a0000' }]}>
@@ -58,10 +78,10 @@ export default function EmergencyScreen() {
           </Text>
         </View>
 
-        {/* I'm OK now — exit */}
+        {/* I'm OK now — auto-logs red zone event, then exits */}
         <TouchableOpacity
           style={[styles.okButton, { borderColor: theme.textMuted }]}
-          onPress={() => router.replace('/(child)/home')}
+          onPress={handleImOk}
         >
           <Text style={[styles.okButtonText, { color: theme.textMuted }]}>
             ✓ I got help — I'm OK now

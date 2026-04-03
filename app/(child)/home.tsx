@@ -72,7 +72,6 @@ export default function ChildHome() {
   const steps        = profile?.actionPlan ? profile.actionPlan[zone].childInstructions : FALLBACK_STEPS[zone];
   const level        = Math.max(1, Math.floor(flareLogs.length / 3) + 1);
   const questBg      = QUEST_BG[`${gender}-${isDark ? 'dark' : 'light'}`];
-  const heroImage    = questBg;  // mode-aware: dark/light variant of the character
   const completedSet = new Set(questCompletions[zone] ?? []);
 
   function handleComplete(index: number) {
@@ -97,13 +96,13 @@ export default function ChildHome() {
         </View>
       </View>
 
-      {/* ── Hero scene — full image, unobscured ── */}
-      <ImageBackground source={heroImage} style={styles.heroScene} resizeMode="cover">
+      {/* ── Hero scene — transparent so the full-screen background image shows through ── */}
+      <View style={styles.heroScene}>
         <View style={[styles.nameOverlay, { backgroundColor: 'rgba(2,11,2,0.65)' }]}>
           <Text style={styles.heroName}>{childName.toUpperCase()}</Text>
           <Text style={styles.heroLevel}>LEVEL {level} FOREST GUARDIAN</Text>
         </View>
-      </ImageBackground>
+      </View>
 
       {/* ── Quest section (scrollable) ── */}
       <ScrollView
