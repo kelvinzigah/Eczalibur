@@ -25,7 +25,7 @@ import { fetchWeather } from '@/lib/weather';
 import { useAppStore } from '@/store/useAppStore';
 import type { ActionPlan, BodyArea, Medication, Prize } from '@/lib/types';
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 
 const COMMON_TRIGGERS = ['Dust mites', 'Pet dander', 'Pollen', 'Sweat', 'Heat', 'Cold/dry air', 'Wool/synthetic fabrics', 'Soap/detergent', 'Stress', 'Certain foods'];
@@ -41,7 +41,13 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 2 — child details
+  // Step 1 — parent info
+  const [parentName, setParentName] = useState('');
+  const [parentCallName, setParentCallName] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [parentRelationship, setParentRelationship] = useState<'father' | 'mother' | 'legal-guardian' | 'other'>('mother');
+
+  // Step 3 — child details
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'neutral'>('neutral');
@@ -128,11 +134,11 @@ export default function OnboardingScreen() {
 
       const data = (await res.json()) as { plan: ActionPlan };
       setGeneratedPlan(data.plan);
-      setStep(7);
+      setStep(8);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       Alert.alert('Plan generation failed', msg + '\n\nYou can continue and generate the plan later.');
-      setStep(7);
+      setStep(8);
     } finally {
       setLoading(false);
     }
@@ -146,6 +152,10 @@ export default function OnboardingScreen() {
 
       await setProfile({
         id: profileId,
+        parentName: parentName.trim(),
+        parentCallName: parentCallName.trim() || parentName.trim(),
+        parentRelationship,
+        parentPhone: parentPhone.trim() || undefined,
         name: childName,
         age: parseInt(childAge, 10) || 10,
         gender,
@@ -176,7 +186,7 @@ export default function OnboardingScreen() {
   }
 
   function nextStep() {
-    if (step === 6) {
+    if (step === 7) {
       generatePlan();
     } else if (step === TOTAL_STEPS) {
       finishOnboarding();
@@ -191,14 +201,15 @@ export default function OnboardingScreen() {
 
   function canProceed(): boolean {
     switch (step) {
-      case 1: return true;
-      case 2: return childName.trim().length > 0 && childAge.trim().length > 0;
-      case 3: return selectedAreas.length > 0;
-      case 4: return true;
+      case 1: return parentName.trim().length > 0 && parentPhone.trim().length >= 7;
+      case 2: return true;
+      case 3: return childName.trim().length > 0 && childAge.trim().length > 0;
+      case 4: return selectedAreas.length > 0;
       case 5: return true;
-      case 6: return !loading;
-      case 7: return true;
+      case 6: return true;
+      case 7: return !loading;
       case 8: return true;
+      case 9: return true;
       default: return true;
     }
   }
@@ -206,9 +217,71 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* ── Step 1: Welcome & consent ── */}
+        {/* ── Step 1: Parent info ── */}
         {step === 1 && (
-          <OnboardingStep step={1} totalSteps={TOTAL_STEPS} title="Welcome to Eczcalibur" subtitle="Let's set up your child's personalised eczema action plan.">
+          <OnboardingStep step={1} totalSteps={TOTAL_STEPS} title="About you" subtitle="This helps personalise the experience for your child.">
+            <Text style={styles.label}>Your name</Text>
+            <TextInput
+              style={styles.input}
+              value={parentName}
+              onChangeText={setParentName}
+              placeholder="E.g. Sarah"
+              placeholderTextColor="#555"
+              autoCapitalize="words"
+            />
+
+            <Text style={styles.label}>What should your child call you?</Text>
+            <TextInput
+              style={styles.input}
+              value={parentCallName}
+              onChangeText={setParentCallName}
+              placeholder="E.g. Mom, Dad, Papa (leave blank to use your name)"
+              placeholderTextColor="#555"
+              autoCapitalize="words"
+            />
+
+            <Text style={styles.label}>Your phone number</Text>
+            <TextInput
+              style={styles.input}
+              value={parentPhone}
+              onChangeText={setParentPhone}
+              placeholder="E.g. +1 514 555 0100"
+              placeholderTextColor="#555"
+              keyboardType="phone-pad"
+              autoComplete="tel"
+            />
+            <Text style={[styles.hint, { marginTop: -12, marginBottom: 16 }]}>
+              Shown on the emergency screen so your child can call you instantly.
+            </Text>
+
+            <Text style={styles.label}>Relationship</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+              {([
+                ['father', 'Father'],
+                ['mother', 'Mother'],
+                ['legal-guardian', 'Legal Guardian'],
+                ['other', 'Other'],
+              ] as const).map(([val, label]) => (
+                <TouchableOpacity
+                  key={val}
+                  style={[
+                    styles.genderPill,
+                    parentRelationship === val && { borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.1)' },
+                  ]}
+                  onPress={() => setParentRelationship(val)}
+                >
+                  <Text style={[styles.genderPillText, parentRelationship === val && { color: '#FFD700' }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </OnboardingStep>
+        )}
+
+        {/* ── Step 2: Welcome & consent ── */}
+        {step === 2 && (
+          <OnboardingStep step={2} totalSteps={TOTAL_STEPS} title="Welcome to Eczcalibur" subtitle="Let's set up your child's personalised eczema action plan.">
             <View style={styles.consentBox}>
               <Text style={styles.consentTitle}>📋 Before we begin</Text>
               <Text style={styles.consentText}>• This app helps manage your child's eczema using a Written Action Plan generated with AI assistance.</Text>
@@ -217,15 +290,17 @@ export default function OnboardingScreen() {
               <Text style={styles.consentText}>• You can update or delete your child's profile at any time.</Text>
             </View>
             <View style={styles.consentBox}>
-              <Text style={styles.consentTitle}>🔒 Privacy</Text>
-              <Text style={styles.consentText}>All data is stored locally on your device. Nothing is shared without your explicit action.</Text>
+              <Text style={styles.consentTitle}>🔒 Privacy &amp; Data</Text>
+              <Text style={styles.consentText}>All profile and log data is stored locally on your device only — we have no server database.</Text>
+              <Text style={styles.consentText}>When you generate a plan, send a chat message, or create an appointment summary, your child's profile data is transmitted to Anthropic's API to generate the response. It is not stored by us on any server. By continuing, you consent to this on behalf of your child.</Text>
+              <Text style={styles.consentText}>This app is intended for use by a parent or legal guardian. If your child is under 13, please ensure you have reviewed Anthropic's privacy policy before proceeding.</Text>
             </View>
           </OnboardingStep>
         )}
 
-        {/* ── Step 2: Child details ── */}
-        {step === 2 && (
-          <OnboardingStep step={2} totalSteps={TOTAL_STEPS} title="About your child" subtitle="This info personalises the action plan.">
+        {/* ── Step 3: Child details ── */}
+        {step === 3 && (
+          <OnboardingStep step={3} totalSteps={TOTAL_STEPS} title="About your child" subtitle="This info personalises the action plan.">
             <Text style={styles.label}>Child's first name</Text>
             <TextInput style={styles.input} value={childName} onChangeText={setChildName} placeholder="E.g. Alex" placeholderTextColor="#555" />
 
@@ -258,16 +333,16 @@ export default function OnboardingScreen() {
           </OnboardingStep>
         )}
 
-        {/* ── Step 3: Body areas ── */}
-        {step === 3 && (
-          <OnboardingStep step={3} totalSteps={TOTAL_STEPS} title="Affected areas" subtitle="Tap the body map or labels to mark where eczema appears.">
+        {/* ── Step 4: Body areas ── */}
+        {step === 4 && (
+          <OnboardingStep step={4} totalSteps={TOTAL_STEPS} title="Affected areas" subtitle="Tap the body map or labels to mark where eczema appears.">
             <BodyMap selected={selectedAreas} onToggle={toggleArea} />
           </OnboardingStep>
         )}
 
-        {/* ── Step 4: Medications ── */}
-        {step === 4 && (
-          <OnboardingStep step={4} totalSteps={TOTAL_STEPS} title="Medications" subtitle="Enter current prescribed treatments. Tap + to add more.">
+        {/* ── Step 5: Medications ── */}
+        {step === 5 && (
+          <OnboardingStep step={5} totalSteps={TOTAL_STEPS} title="Medications" subtitle="Enter current prescribed treatments. Tap + to add more.">
             {medications.map((med, i) => (
               <View key={i} style={styles.medCard}>
                 <View style={styles.medHeader}>
@@ -290,9 +365,9 @@ export default function OnboardingScreen() {
           </OnboardingStep>
         )}
 
-        {/* ── Step 5: Triggers ── */}
-        {step === 5 && (
-          <OnboardingStep step={5} totalSteps={TOTAL_STEPS} title="Known triggers" subtitle="Select anything that tends to cause flares.">
+        {/* ── Step 6: Triggers ── */}
+        {step === 6 && (
+          <OnboardingStep step={6} totalSteps={TOTAL_STEPS} title="Known triggers" subtitle="Select anything that tends to cause flares.">
             <View style={styles.chipGrid}>
               {COMMON_TRIGGERS.map((t) => (
                 <Pressable
@@ -323,9 +398,9 @@ export default function OnboardingScreen() {
           </OnboardingStep>
         )}
 
-        {/* ── Step 6: Generate plan ── */}
-        {step === 6 && (
-          <OnboardingStep step={6} totalSteps={TOTAL_STEPS} title="Generating your plan" subtitle="Claude AI is creating a personalised 3-zone action plan.">
+        {/* ── Step 7: Generate plan ── */}
+        {step === 7 && (
+          <OnboardingStep step={7} totalSteps={TOTAL_STEPS} title="Generating your plan" subtitle="Claude AI is creating a personalised 3-zone action plan.">
             <View style={styles.generateBox}>
               <Text style={styles.generateIcon}>⚔️</Text>
               <Text style={styles.generateTitle}>Ready to forge {childName}'s action plan</Text>
@@ -337,9 +412,9 @@ export default function OnboardingScreen() {
           </OnboardingStep>
         )}
 
-        {/* ── Step 7: Plan review ── */}
-        {step === 7 && (
-          <OnboardingStep step={7} totalSteps={TOTAL_STEPS} title="Review your plan" subtitle="Your 3-zone action plan is ready. Review before approving.">
+        {/* ── Step 8: Plan review ── */}
+        {step === 8 && (
+          <OnboardingStep step={8} totalSteps={TOTAL_STEPS} title="Review your plan" subtitle="Your 3-zone action plan is ready. Review before approving.">
             {generatedPlan ? (
               <>
                 {(['green', 'yellow', 'red'] as const).map((zone) => {
@@ -368,9 +443,9 @@ export default function OnboardingScreen() {
           </OnboardingStep>
         )}
 
-        {/* ── Step 8: Prize setup ── */}
-        {step === 8 && (
-          <OnboardingStep step={8} totalSteps={TOTAL_STEPS} title="Set up prizes" subtitle="Children earn points for logging flares. What can they redeem?">
+        {/* ── Step 9: Prize setup ── */}
+        {step === 9 && (
+          <OnboardingStep step={9} totalSteps={TOTAL_STEPS} title="Set up prizes" subtitle="Children earn points for logging flares. What can they redeem?">
             {prizes.map((prize, i) => (
               <View key={prize.id} style={styles.prizeCard}>
                 <Text style={styles.prizeIcon}>{prize.icon}</Text>
@@ -402,11 +477,11 @@ export default function OnboardingScreen() {
             onPress={nextStep}
             disabled={!canProceed() || loading}
           >
-            {loading && step === 6 ? (
+            {loading && step === 7 ? (
               <ActivityIndicator color="#1a1a2e" />
             ) : (
               <Text style={styles.nextButtonText}>
-                {step === TOTAL_STEPS ? '✓ Finish Setup' : step === 6 ? '⚔️ Generate Plan' : 'Continue →'}
+                {step === TOTAL_STEPS ? '✓ Finish Setup' : step === 7 ? '⚔️ Generate Plan' : 'Continue →'}
               </Text>
             )}
           </TouchableOpacity>

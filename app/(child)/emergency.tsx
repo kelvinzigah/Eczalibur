@@ -45,7 +45,7 @@ export default function EmergencyScreen() {
         {/* Call parent button — pixel-cut shadow */}
         <TouchableOpacity
           style={styles.callButton}
-          onPress={() => Linking.openURL('tel:')}
+          onPress={() => Linking.openURL(`tel:${profile?.parentPhone ?? ''}`)}
           activeOpacity={0.85}
         >
           <Text style={styles.callButtonText}>📞  CALL A PARENT</Text>

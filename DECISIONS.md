@@ -1,5 +1,43 @@
 # Eczcalibur — Architectural Decisions
 
+## Phase 12 — Security Hardening
+
+### D-015: Bidirectional PIN gate — both directions require PIN
+**Decision:** PinGate (child layout) guards parent→child. A new `PinVerifyModal` guards child→parent. Only the parent (who knows the PIN) can switch modes in either direction.
+
+**Rationale:** On the child's device, the child should be locked into child view. Without the reverse gate, tapping "← Parent View" bypassed all security. The modal approach avoids wrapping the parent layout in PinGate (which would break fresh app open on the parent's own phone).
+
+**Impact:** `lib/auth/PinVerifyModal.tsx` — verify-only modal, no set-PIN flow. `app/(child)/home.tsx` — Parent View link now calls `setShowParentPin(true)` instead of navigating directly.
+
+---
+
+### D-016: Prompt injection mitigation — delimiter tagging, not stripping
+**Decision:** Child log notes are prefixed with `[child-entered, unverified]` before injection into the Claude system prompt. The system prompt explicitly instructs Claude to treat that tag as data, not instructions.
+
+**Rationale:** Stripping or escaping notes entirely would destroy legitimate log data. Delimiter tagging preserves the data while signalling its source to Claude and providing an explicit override-resistance instruction in the system prompt.
+
+**Impact:** `app/api/chat+api.ts` `formatLogContext` + `lib/prompts.ts` `CHAT_SYSTEM`.
+
+---
+
+### D-017: Daily log cap at 3, not 1 — deduplication not appropriate
+**Decision:** `addFlareLog` silently drops any log attempt beyond 3 per calendar day. No deduplication by content or timestamp proximity.
+
+**Rationale:** A child can legitimately have multiple distinct flares in a day. Deduplication by date would block valid data. 3 is a reasonable medical ceiling for reportable events in one day, and closes the points farming gap without over-restricting real use.
+
+**Impact:** `store/useAppStore.ts` `addFlareLog`.
+
+---
+
+### D-018: Parent info collected first in onboarding (Step 1)
+**Decision:** Onboarding starts with parent name, what the child calls them, phone number, and relationship. Consent/privacy is Step 2. Child details are Step 3 onward.
+
+**Rationale:** Phone number is critical for the emergency screen and belongs to the parent, not the child profile. Collecting it first ensures it's never skipped. It also personalises the experience immediately — the app knows the parent's name before asking about the child.
+
+**Impact:** `app/(parent)/onboarding.tsx` restructured to 9 steps. `ChildProfile` gains `parentName`, `parentCallName`, `parentRelationship`.
+
+---
+
 ## Phase 1 — Auth & Routing
 
 ### D-001: Single Clerk account (parent only), child access via PIN

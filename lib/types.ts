@@ -45,6 +45,14 @@ export interface Medication {
 
 export interface ChildProfile {
   id: string;
+  // ── Parent info ──────────────────────────────────────────────────────────
+  /** Parent's own name */
+  parentName?: string;
+  /** What the child calls the parent — e.g. "Mom", "Dad", "Papa" */
+  parentCallName?: string;
+  /** Parent relationship to child */
+  parentRelationship?: 'father' | 'mother' | 'legal-guardian' | 'other';
+  // ── Child info ───────────────────────────────────────────────────────────
   name: string;
   /** Age in years */
   age: number;
@@ -60,6 +68,8 @@ export interface ChildProfile {
   affectedAreas: BodyArea[];
   /** Parent-confirmed current action plan */
   actionPlan: ActionPlan | null;
+  /** Parent phone number — pre-filled on emergency call screen */
+  parentPhone?: string;
   /** Whether parent has completed the consent/onboarding flow */
   onboardingComplete: boolean;
   createdAt: string;

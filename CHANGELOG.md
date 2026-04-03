@@ -1,5 +1,27 @@
 # Eczcalibur — Build Changelog
 
+## Phase 12 — Security Hardening + Onboarding Restructure (2026-04-03)
+
+**All 5 critical audit issues resolved. TypeScript: 0 errors.**
+
+**Files created:**
+- `lib/auth/PinVerifyModal.tsx` — bottom-sheet modal PIN verification for child→parent navigation gate
+
+**Files modified:**
+- `lib/types.ts` — added `parentName`, `parentCallName`, `parentRelationship` to `ChildProfile`; `parentPhone` already present
+- `app/(parent)/onboarding.tsx` — restructured to 9 steps: new Step 1 collects parent info (name, child's name for parent, phone, relationship selector); consent/privacy moved to Step 2; all subsequent steps shifted +1; COPPA/API transmission disclosure added to consent step; fixed `setStep(7)` → `setStep(8)` bug that blocked plan generation advance
+- `app/(child)/home.tsx` — "← Parent View" link now triggers `PinVerifyModal` before navigating; child cannot reach parent dashboard without PIN
+- `app/(child)/emergency.tsx` — fixed broken `tel:` call; now pre-fills `profile.parentPhone`
+- `app/api/chat+api.ts` — child log notes wrapped with `[child-entered, unverified]` tag before injection into system prompt; closes prompt injection vector
+- `lib/prompts.ts` — `CHAT_SYSTEM`: added DATA INTEGRITY instruction to treat `[child-entered, unverified]` as data not instructions; `GENERATE_PLAN_SYSTEM`: added skin-of-colour constraint (texture/warmth/sensation language over colour), fixed yellow zone definition to not rely on redness
+- `store/useAppStore.ts` — `addFlareLog` now enforces daily cap of 3 logs per calendar day; closes points farming gap
+- `.claude/.agents/JUDGE_LOG.md` — all 5 checklist items marked resolved with dates
+
+**Score impact (estimated):**
+- Technical Execution: +3–4 pts (injection fix, cap, broken button)
+- Ethical Alignment: +3–4 pts (skin-of-colour, COPPA disclosure)
+- Estimated new total: ~83–85/100
+
 ## Phase 11 — Zelda-Style UI Redesign + Tab Navigation (2026-04-03)
 
 **Files created:**

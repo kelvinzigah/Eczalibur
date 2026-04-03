@@ -119,6 +119,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ── Flare logs ──
 
   async addFlareLog(log) {
+    const today = new Date().toDateString();
+    const todayCount = get().flareLogs.filter(
+      (l) => new Date(l.timestamp).toDateString() === today,
+    ).length;
+    if (todayCount >= 3) return;
     const updated = await appendFlareLog(log);
     set({ flareLogs: updated });
   },

@@ -1,8 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppStore } from '@/store/useAppStore';
+import { PinVerifyModal } from '@/lib/auth/PinVerifyModal';
 import type { Zone } from '@/lib/types';
 
 // ─── Zone config ──────────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ function HeartGauge({ zone }: { zone: Zone }) {
 export default function ChildHome() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { profile, points, flareLogs, currentZone } = useAppStore();
+  const [showParentPin, setShowParentPin] = useState(false);
 
   const zone = currentZone();
   const childName = profile?.name ?? 'Hero';
@@ -146,15 +149,26 @@ export default function ChildHome() {
           })}
         </ScrollView>
 
-        {/* Back to parent link */}
+        {/* Parent view — PIN-gated */}
         <TouchableOpacity
           style={styles.parentLink}
-          onPress={() => router.replace('/(parent)/dashboard')}
+          onPress={() => setShowParentPin(true)}
         >
-          <Text style={[styles.parentLinkText, { color: theme.textMuted }]}>← Parent View</Text>
+          <MaterialIcons name="lock" size={13} color={theme.textMuted} />
+          <Text style={[styles.parentLinkText, { color: theme.textMuted }]}> Parent View</Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      <PinVerifyModal
+        visible={showParentPin}
+        prompt="Enter your PIN to switch to Parent View"
+        onSuccess={() => {
+          setShowParentPin(false);
+          router.replace('/(parent)/dashboard');
+        }}
+        onCancel={() => setShowParentPin(false)}
+      />
 
       {/* ── FLARE-UP Button (pinned above tab bar) ── */}
       <TouchableOpacity

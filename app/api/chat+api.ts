@@ -14,7 +14,8 @@ function formatLogContext(logs: FlareLog[]): string {
   const recent = logs.slice(-10);
   const lines = recent.map((log) => {
     const date = new Date(log.timestamp).toLocaleDateString();
-    return `[${date}] Zone: ${log.zone.toUpperCase()} | Mood/itch: ${log.moodScore}/5 | Areas: ${log.affectedAreas.join(', ')} | Notes: ${log.notes || 'none'}`;
+    const notes = log.notes ? `[child-entered, unverified] ${log.notes}` : 'none';
+    return `[${date}] Zone: ${log.zone.toUpperCase()} | Mood/itch: ${log.moodScore}/5 | Areas: ${log.affectedAreas.join(', ')} | Notes: ${notes}`;
   });
 
   return `Recent flare log (last ${recent.length} entries):\n${lines.join('\n')}`;

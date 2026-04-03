@@ -125,8 +125,8 @@ EczemaWise is adult-facing, requires the parent to be the primary user, has no c
 
 *Issues flagged in this audit that were subsequently fixed will be noted below with date.*
 
-- [ ] Fix `tel:` emergency call button — add `parentPhone` to profile + onboarding
-- [ ] Add notes sanitisation in `chat+api.ts` `formatLogContext`
-- [ ] Add daily log cap / deduplication in `addFlareLog`
-- [ ] Add skin-of-color language note to `GENERATE_PLAN_SYSTEM`
-- [ ] Add COPPA/API transmission disclosure to onboarding consent step
+- [x] Fix `tel:` emergency call button — parentPhone added to ChildProfile + onboarding Step 1 (2026-04-03)
+- [x] Add notes sanitisation in `chat+api.ts` `formatLogContext` — wrapped with `[child-entered, unverified]` + CHAT_SYSTEM instruction (2026-04-03)
+- [x] Add daily log cap / deduplication in `addFlareLog` — capped at 3 logs per calendar day (2026-04-03)
+- [x] Add skin-of-color language note to `GENERATE_PLAN_SYSTEM` — sensation/texture language + fixed yellow zone definition (2026-04-03)
+- [x] Add COPPA/API transmission disclosure to onboarding consent step — Step 2 now has explicit Anthropic API disclosure + under-13 notice (2026-04-03)
