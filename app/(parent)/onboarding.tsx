@@ -23,6 +23,7 @@ import { BG } from '@/constants/backgrounds';
 import * as ExpoCrypto from 'expo-crypto';
 import { BodyMap } from '@/components/parent/BodyMap';
 import { OnboardingStep } from '@/components/parent/OnboardingStep';
+import { apiFetch } from '@/lib/api';
 import { fetchWeather } from '@/lib/weather';
 import { useAppStore } from '@/store/useAppStore';
 import type { ActionPlan, BodyArea, Medication, Prize } from '@/lib/types';
@@ -112,22 +113,18 @@ export default function OnboardingScreen() {
       const weather = await fetchWeather(location || 'Montreal');
       const validMeds = medications.filter((m) => m.name.trim());
 
-      const res = await fetch('/api/generate-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile: {
-            name: childName,
-            age: parseInt(childAge, 10),
-            location,
-            diagnosis,
-            medications: validMeds,
-            triggers: selectedTriggers,
-            affectedAreas: selectedAreas,
-          },
-          temperature: weather.temperature,
-          humidity: weather.humidity,
-        }),
+      const res = await apiFetch('/generate-plan', {
+        profile: {
+          name: childName,
+          age: parseInt(childAge, 10),
+          location,
+          diagnosis,
+          medications: validMeds,
+          triggers: selectedTriggers,
+          affectedAreas: selectedAreas,
+        },
+        temperature: weather.temperature,
+        humidity: weather.humidity,
       });
 
       if (!res.ok) {

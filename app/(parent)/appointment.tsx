@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import { useState } from 'react';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -52,11 +53,7 @@ export default function AppointmentScreen() {
     setLoading(true);
     setSummary(null);
     try {
-      const res = await fetch('/api/appointment-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, logs: flareLogs, appointmentDate }),
-      });
+      const res = await apiFetch('/appointment-summary', { profile, logs: flareLogs, appointmentDate });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       setSummary(data.summary ?? '');

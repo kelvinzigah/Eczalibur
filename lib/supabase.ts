@@ -20,23 +20,12 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getClerkTokenFn, setClerkTokenProvider } from './clerkToken';
+
+export { setClerkTokenProvider };
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
-// ─── Token provider ──────────────────────────────────────────────────────────
-
-type GetToken = (opts?: { template?: string }) => Promise<string | null>;
-
-let _getToken: GetToken | null = null;
-
-/**
- * Call once from app/_layout.tsx after Clerk is loaded.
- * Pass in the `getToken` function from useAuth().
- */
-export function setClerkTokenProvider(fn: GetToken): void {
-  _getToken = fn;
-}
 
 // ─── Supabase client ─────────────────────────────────────────────────────────
 
@@ -54,8 +43,9 @@ export const supabase: SupabaseClient = createClient(
       // Inject the Clerk JWT on every request so RLS can identify the user
       fetch: async (url, options = {}) => {
         const headers = new Headers(options.headers as HeadersInit | undefined);
-        if (_getToken) {
-          const token = await _getToken({ template: 'supabase' });
+        const getToken = getClerkTokenFn();
+        if (getToken) {
+          const token = await getToken({ template: 'supabase' });
           if (token) {
             headers.set('Authorization', `Bearer ${token}`);
           }
@@ -68,21 +58,4 @@ export const supabase: SupabaseClient = createClient(
 
 // ─── User ID helper ──────────────────────────────────────────────────────────
 
-/**
- * Decode the Clerk JWT and return the `sub` claim (= clerk_user_id).
- * Returns null if no token provider is set or token cannot be decoded.
- */
-export async function getClerkUserId(): Promise<string | null> {
-  if (!_getToken) return null;
-  try {
-    const token = await _getToken({ template: 'supabase' });
-    if (!token) return null;
-    const payload = token.split('.')[1];
-    if (!payload) return null;
-    // atob works in React Native (Hermes engine supports it)
-    const decoded = JSON.parse(atob(payload)) as Record<string, unknown>;
-    return (decoded.sub as string) ?? null;
-  } catch {
-    return null;
-  }
-}
+export { getClerkUserId } from './clerkToken';

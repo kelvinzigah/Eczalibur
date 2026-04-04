@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -51,10 +52,7 @@ export default function ChatScreen() {
     try {
       if (!profile) throw new Error('No profile loaded');
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const res = await apiFetch('/chat', {
           messages: updatedMessages,
           recentLogs: flareLogs.slice(-30),
           profile: {
@@ -64,7 +62,6 @@ export default function ChatScreen() {
             medications: profile.medications,
             triggers: profile.triggers,
           },
-        }),
       });
 
       if (!res.ok) throw new Error(`API error ${res.status}`);
