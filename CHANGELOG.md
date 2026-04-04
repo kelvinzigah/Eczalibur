@@ -1,5 +1,27 @@
 # Eczcalibur — Build Changelog
 
+## Phase 20 — Parent Dashboard UI Redesign (2026-04-04)
+
+**TypeScript: 0 errors.**
+
+**Files modified:**
+- `app/(parent)/dashboard.tsx` — complete UI redesign; frosted glass card system, new sections
+
+**What changed:**
+- **Greeting**: "Welcome back," + parentCallName in large gold (replaces child name)
+- **Zone card**: frosted glass, absolute-positioned 4px left accent bar in zone color (fixed Android `borderWidth`+`borderLeftWidth`+`borderRadius` crash), shield icon, zone badge + description, WAP action bullets from `profile.actionPlan[zone].parentInstructions`
+- **Stats + Zone History row**: two frosted cards side by side — left has Total Logs + Points Balance; right has 7-day zone dot history (colored dots + day labels, computed from `flareLogs`)
+- **ECZ Insights card**: most common trigger (`profile.triggers[0]`) + last flare date/time (manual date formatting — avoids Hermes `toLocaleDateString` crash on older Android)
+- **Quick Actions row**: 4 rounded-square icon buttons (Plan → settings, Logs, Appt, Child View) replacing the old full-width "Switch to Child View" button
+- **Styling language**: frosted glass (`rgba(255,255,255,0.08)` dark / `rgba(255,255,255,0.55)` light), soft shadows, thin 1px borders, zone colors as accents only — clinical/professional aesthetic inspired by Hourglass medical app reference
+- **Prize Requests**: kept, updated to frosted card style
+
+**Bugs fixed:**
+- Android crash: replaced `borderLeftWidth` + `borderWidth` + `borderRadius` combination with absolutely-positioned accent bar + `overflow: 'hidden'`
+- Android crash: replaced `toLocaleDateString`/`toLocaleTimeString` locale calls with manual date formatting (Hermes compatibility)
+
+---
+
 ## Phase 19 — Two-Device Sync Fix + iPhone Verified (2026-04-04)
 
 **TypeScript: 0 errors.**
