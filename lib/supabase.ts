@@ -53,13 +53,11 @@ export const supabase: SupabaseClient = createClient(
     global: {
       // Inject the Clerk JWT on every request so RLS can identify the user
       fetch: async (url, options = {}) => {
-        const headers: Record<string, string> = {
-          ...(options.headers as Record<string, string> | undefined),
-        };
+        const headers = new Headers(options.headers as HeadersInit | undefined);
         if (_getToken) {
           const token = await _getToken({ template: 'supabase' });
           if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+            headers.set('Authorization', `Bearer ${token}`);
           }
         }
         return fetch(url, { ...options, headers });
