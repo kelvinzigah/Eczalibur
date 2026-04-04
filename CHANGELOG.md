@@ -1,5 +1,18 @@
 # Eczcalibur — Build Changelog
 
+## Phase 19 — Two-Device Sync Fix + iPhone Verified (2026-04-04)
+
+**TypeScript: 0 errors.**
+
+**Bug fixed:**
+- `app/_layout.tsx`: merged `StoreHydrator` + `SupabaseTokenSync` into single `AppBootstrap` component — token provider was being registered *after* `hydrate()` fired, so Device 2 (fresh install) always got null `clerk_user_id` and fell back to empty AsyncStorage instead of reading from Supabase
+
+**Verified:**
+- iPhone (Expo Go via tunnel) loads and runs the app successfully
+- Two-device Supabase sync path unblocked
+
+---
+
 ## Phase 18 — FastAPI Backend + Dashboard Polish (2026-04-04)
 
 **TypeScript: 0 errors.**

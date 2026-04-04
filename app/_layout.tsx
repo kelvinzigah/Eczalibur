@@ -13,18 +13,18 @@ if (!publishableKey) {
   throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set in .env');
 }
 
-function StoreHydrator() {
-  const hydrate = useAppStore((s) => s.hydrate);
-  useEffect(() => { hydrate(); }, [hydrate]);
-  return null;
-}
-
-/** Registers the Clerk token provider with the Supabase client once on mount. */
-function SupabaseTokenSync() {
+/**
+ * Sets the Clerk token provider on the Supabase client, then hydrates the
+ * Zustand store. Token must be registered before hydrate() so Supabase reads
+ * fire with a valid JWT on Device 2 (fresh install / new login).
+ */
+function AppBootstrap() {
   const { getToken } = useAuth();
+  const hydrate = useAppStore((s) => s.hydrate);
   useEffect(() => {
     setClerkTokenProvider(getToken);
-  }, [getToken]);
+    hydrate();
+  }, [getToken, hydrate]);
   return null;
 }
 
@@ -39,8 +39,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <ClerkLoaded>
-          <StoreHydrator />
-          <SupabaseTokenSync />
+          <AppBootstrap />
           <RealtimeSync />
           <Slot />
         </ClerkLoaded>

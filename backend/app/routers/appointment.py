@@ -42,7 +42,7 @@ async def appointment_summary(
     try:
         async with client.messages.stream(
             model="claude-opus-4-6",
-            max_tokens=2048,
+            max_tokens=8000,
             thinking={"type": "enabled", "budget_tokens": 5000},
             system=APPOINTMENT_SUMMARY_SYSTEM,
             messages=[{"role": "user", "content": user_message}],
