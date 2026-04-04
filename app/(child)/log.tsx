@@ -37,9 +37,9 @@ const AREA_LABELS: Record<BodyArea, string> = {
   scalp: 'Scalp', other: 'Other',
 };
 
-const COOLDOWN_MS  = 10 * 60 * 1000; // 10 minutes
+const COOLDOWN_MS  = 15 * 1000; // 15 seconds
 const MAX_PHOTOS   = 3;
-const MAX_DAILY    = 3;
+const MAX_DAILY    = 15;
 
 type Step = 1 | 2 | 3 | 4 | 'done';
 

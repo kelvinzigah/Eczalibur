@@ -14,6 +14,7 @@ import {
   appendFlareLog,
   clearAll,
   deactivateWatchConfig,
+  deleteWatchConfig,
   hydrateAll,
   readQuestCompletions,
   saveWatchConfig,
@@ -81,6 +82,7 @@ interface AppStore extends AppState {
   setWatchConfigs: (configs: WatchConfig[]) => void;
   addWatchConfig: (config: WatchConfig) => Promise<void>;
   deactivateWatch: (id: string) => Promise<void>;
+  removeWatch: (id: string) => Promise<void>;
 
   // Derived helpers
   currentZone: () => Zone;
@@ -157,7 +159,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const todayCount = get().flareLogs.filter(
       (l) => new Date(l.timestamp).toDateString() === today,
     ).length;
-    if (todayCount >= 3) return;
+    if (todayCount >= 15) return;
     const updated = await appendFlareLog(log);
     set({ flareLogs: updated });
   },
@@ -281,6 +283,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
+  async removeWatch(id) {
+    await deleteWatchConfig(id);
+    set({ watchConfigs: get().watchConfigs.filter((c) => c.id !== id) });
+  },
+
   // ── Derived ──
 
   currentZone(): Zone {
@@ -290,8 +297,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   activeWatch(): WatchConfig | null {
-    const { watchConfigs, profile } = get();
-    if (!profile) return null;
-    return watchConfigs.find((c) => c.childId === profile.id && c.active) ?? null;
+    return get().watchConfigs.find((c) => c.active) ?? null;
   },
 }));

@@ -254,7 +254,7 @@ export default function ParentDashboard() {
         {watch ? (
           <TouchableOpacity
             style={[card, styles.watchBanner]}
-            onPress={() => router.push('/(parent)/watch-detail')}
+            onPress={() => router.push('/(parent)/watches')}
             activeOpacity={0.80}
           >
             <View style={[styles.watchAccentBar, { backgroundColor: theme.green }]} />

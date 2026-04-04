@@ -569,6 +569,23 @@ export async function deactivateWatchConfig(id: string): Promise<void> {
   }
 }
 
+export async function deleteWatchConfig(id: string): Promise<void> {
+  const uid = await getClerkUserId();
+  const existing = await readWatchConfigs();
+  const updated = existing.filter((c) => c.id !== id);
+  await localWrite(KEYS.WATCH_CONFIGS, updated);
+  if (!uid) return;
+  try {
+    await supabase
+      .from('watch_configs')
+      .delete()
+      .eq('id', id)
+      .eq('clerk_user_id', uid);
+  } catch {
+    // local delete succeeded
+  }
+}
+
 export async function appendWatchPhoto(photo: WatchPhoto): Promise<void> {
   const uid = await getClerkUserId();
   if (!uid) return;

@@ -54,6 +54,15 @@ export default function ParentLayout() {
         }}
       />
       <Tabs.Screen
+        name="watches"
+        options={{
+          title: 'Watches',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="visibility" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="appointment"
         options={{
           title: 'Reports',
