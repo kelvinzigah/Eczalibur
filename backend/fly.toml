@@ -1,4 +1,4 @@
-app = "eczalibur-api"
+app = "eczcalibur-api"
 primary_region = "yyz"
 
 [build]
