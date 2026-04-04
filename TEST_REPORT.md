@@ -85,3 +85,32 @@
 - Clerk OTP/2FA steps not automated (requires live email code)
 
 ---
+
+## Phase 21 — MAVL Watch Feature (ADB E2E — Android Emulator)
+
+**TypeScript: 0 errors.**
+**Backend deployed:** `eczcalibur-api.fly.dev` — `/analyze-watch` route live.
+
+| Test | Check | Result |
+|------|-------|--------|
+| T1 | Dashboard Watch banner visible after launch | ✅ |
+| T2 | Watch creation — area grid selectable, duration picker, "Start Watch" saves config | ✅ |
+| T2 | Banner updates to "Active Watch / Left elbow crease" after creation | ✅ |
+| T3 | Child log Step 4 "Special Mission" appears when watch is active | ✅ |
+| T3 | Step 4 shows watched area, photo picker, skip option | ✅ |
+| T3 | Logging with photo awards +15 bonus points | ✅ |
+| T4 | Watch Detail screen opens from banner tap | ✅ |
+| T4 | Photo timeline loads (1 photo thumbnail visible) | ✅ |
+| T4 | "Run Analysis" button enabled when photos > 0 | ✅ |
+| T4 | Run Analysis returns Claude result: trend badge, summary, key observations, doctor questions | ✅ |
+| T4 | "Not enough data" trend correct for 1-photo session | ✅ |
+
+**Bugs found and fixed during E2E:**
+- Metro syntax error — Step 4 return block outside component function → moved inside
+- Zustand v5 re-render — `watchConfigs` missing from dashboard destructure → added
+- `FileReader` unavailable in Hermes → replaced with `expo-file-system/legacy`
+- Backend 500 — `_MAX_B64_BYTES` Pydantic `ModelPrivateAttr` TypeError → moved to module-level constant
+
+**Pending (Test 5 — End Watch, Test 6 — Regression):** to be completed before commit.
+
+---

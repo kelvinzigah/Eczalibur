@@ -20,6 +20,8 @@ import type {
   PointsLedger,
   Prize,
   RedemptionRequest,
+  WatchConfig,
+  WatchPhoto,
 } from './types';
 
 // ─── AsyncStorage keys (offline fallback) ────────────────────────────────────
@@ -31,6 +33,7 @@ const KEYS = {
   REDEMPTIONS:       'eczcalibur:redemptions',
   POINTS:            'eczcalibur:points',
   QUEST_COMPLETIONS: 'eczcalibur:quest_completions',
+  WATCH_CONFIGS:     'eczcalibur:watch_configs',
 } as const;
 
 // ─── In-memory fallback (when AsyncStorage native module unavailable) ────────
@@ -459,16 +462,153 @@ export async function writeQuestCompletions(completions: QuestCompletions): Prom
 
 // ─── Full hydration ──────────────────────────────────────────────────────────
 
+// ─── Watch Configs ────────────────────────────────────────────────────────────
+
+function watchConfigFromRow(row: Record<string, unknown>): WatchConfig {
+  return {
+    id:           row.id as string,
+    childId:      row.child_id as string,
+    area:         row.area as string,
+    durationDays: row.duration_days as WatchConfig['durationDays'],
+    startDate:    row.start_date as string,
+    active:       row.active as boolean,
+    createdAt:    row.created_at as string,
+  };
+}
+
+function watchConfigToRow(config: WatchConfig, clerkUserId: string): Record<string, unknown> {
+  return {
+    id:            config.id,
+    clerk_user_id: clerkUserId,
+    child_id:      config.childId,
+    area:          config.area,
+    duration_days: config.durationDays,
+    start_date:    config.startDate,
+    active:        config.active,
+    created_at:    config.createdAt,
+  };
+}
+
+function watchPhotoFromRow(row: Record<string, unknown>): WatchPhoto {
+  return {
+    id:             row.id as string,
+    watchConfigId:  row.watch_config_id as string,
+    photoUrl:       row.photo_url as string,
+    timestamp:      row.timestamp as string,
+    area:           row.area as string,
+    notes:          (row.notes as string) ?? null,
+    createdAt:      row.created_at as string,
+  };
+}
+
+function watchPhotoToRow(photo: WatchPhoto, clerkUserId: string): Record<string, unknown> {
+  return {
+    id:              photo.id,
+    clerk_user_id:   clerkUserId,
+    watch_config_id: photo.watchConfigId,
+    photo_url:       photo.photoUrl,
+    timestamp:       photo.timestamp,
+    area:            photo.area,
+    notes:           photo.notes ?? null,
+    created_at:      photo.createdAt,
+  };
+}
+
+export async function readWatchConfigs(): Promise<WatchConfig[]> {
+  const uid = await getClerkUserId();
+  if (uid) {
+    try {
+      const { data, error } = await supabase
+        .from('watch_configs')
+        .select('*')
+        .eq('clerk_user_id', uid)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        const configs = (data as Record<string, unknown>[]).map(watchConfigFromRow);
+        await localWrite(KEYS.WATCH_CONFIGS, configs);
+        return configs;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return (await localRead<WatchConfig[]>(KEYS.WATCH_CONFIGS)) ?? [];
+}
+
+export async function saveWatchConfig(config: WatchConfig): Promise<void> {
+  const uid = await getClerkUserId();
+  const existing = await readWatchConfigs();
+  const updated = existing.some((c) => c.id === config.id)
+    ? existing.map((c) => (c.id === config.id ? config : c))
+    : [...existing, config];
+  await localWrite(KEYS.WATCH_CONFIGS, updated);
+  if (!uid) return;
+  try {
+    await supabase
+      .from('watch_configs')
+      .upsert(watchConfigToRow(config, uid), { onConflict: 'id' });
+  } catch {
+    // local write succeeded
+  }
+}
+
+export async function deactivateWatchConfig(id: string): Promise<void> {
+  const uid = await getClerkUserId();
+  const existing = await readWatchConfigs();
+  const updated = existing.map((c) => (c.id === id ? { ...c, active: false } : c));
+  await localWrite(KEYS.WATCH_CONFIGS, updated);
+  if (!uid) return;
+  try {
+    await supabase
+      .from('watch_configs')
+      .update({ active: false })
+      .eq('id', id)
+      .eq('clerk_user_id', uid);
+  } catch {
+    // local write succeeded
+  }
+}
+
+export async function appendWatchPhoto(photo: WatchPhoto): Promise<void> {
+  const uid = await getClerkUserId();
+  if (!uid) return;
+  try {
+    await supabase.from('watch_photos').insert(watchPhotoToRow(photo, uid));
+  } catch {
+    // photos are Supabase-only — no local fallback (base64 is too large for AsyncStorage)
+  }
+}
+
+export async function getWatchPhotos(watchConfigId: string): Promise<WatchPhoto[]> {
+  const uid = await getClerkUserId();
+  if (!uid) return [];
+  try {
+    const { data, error } = await supabase
+      .from('watch_photos')
+      .select('*')
+      .eq('watch_config_id', watchConfigId)
+      .eq('clerk_user_id', uid)
+      .order('timestamp', { ascending: true });
+    if (!error && data) {
+      return (data as Record<string, unknown>[]).map(watchPhotoFromRow);
+    }
+  } catch {
+    // no-op
+  }
+  return [];
+}
+
 /** Load all persisted state in parallel. Used at app launch to hydrate Zustand. */
 export async function hydrateAll(): Promise<AppState> {
-  const [profile, flareLogs, prizes, redemptions, points] = await Promise.all([
+  const [profile, flareLogs, prizes, redemptions, points, watchConfigs] = await Promise.all([
     readProfile(),
     readFlareLogs(),
     readPrizes(),
     readRedemptions(),
     readPoints(),
+    readWatchConfigs(),
   ]);
-  return { profile, flareLogs, prizes, redemptions, points };
+  return { profile, flareLogs, prizes, redemptions, points, watchConfigs };
 }
 
 /** Wipe all app data (sign-out / reset). */
@@ -482,7 +622,8 @@ export async function clearAll(): Promise<void> {
   const uid = await getClerkUserId();
   if (!uid) return;
   try {
-    // Cascade from child_profiles cleans flare_logs, prizes, redemption_requests
+    // Cascade from child_profiles cleans flare_logs, prizes, redemption_requests,
+    // watch_configs, and watch_photos (all FK to clerk_user_id)
     await Promise.all([
       supabase.from('quest_completions').delete().eq('clerk_user_id', uid),
       supabase.from('points_ledger').delete().eq('clerk_user_id', uid),

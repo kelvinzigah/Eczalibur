@@ -13,7 +13,7 @@ import {
 import { useTheme } from '@/context/ThemeContext';
 import { BG, overlayColor } from '@/constants/backgrounds';
 import { useAppStore } from '@/store/useAppStore';
-import type { FlareLog, RedemptionRequest, Zone } from '@/lib/types';
+import type { FlareLog, RedemptionRequest, WatchConfig, Zone } from '@/lib/types';
 
 // ─── Zone config ─────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ function frostedCard(isDark: boolean): ViewStyle {
 
 export default function ParentDashboard() {
   const { theme, isDark, toggleTheme } = useTheme();
-  const { isHydrated, profile, flareLogs, points, redemptions, currentZone, resolveRedemption, awardPoints } =
+  const { isHydrated, profile, flareLogs, points, redemptions, watchConfigs, currentZone, activeWatch, resolveRedemption, awardPoints } =
     useAppStore();
 
   if (!isHydrated) {
@@ -132,6 +132,7 @@ export default function ParentDashboard() {
   const lastFlare = formatLastFlare(flareLogs);
   const topTrigger = profile.triggers?.[0] ?? 'None recorded';
   const pendingRedemptions = redemptions.filter((r) => r.status === 'pending');
+  const watch: WatchConfig | null = activeWatch();
 
   const actionBullets: string[] = profile.actionPlan
     ? (profile.actionPlan[zone]?.parentInstructions ?? []).slice(0, 3)
@@ -248,6 +249,37 @@ export default function ParentDashboard() {
             </View>
           </View>
         </View>
+
+        {/* ── Active Watch Banner (conditional) ── */}
+        {watch ? (
+          <TouchableOpacity
+            style={[card, styles.watchBanner]}
+            onPress={() => router.push('/(parent)/watch-detail')}
+            activeOpacity={0.80}
+          >
+            <View style={[styles.watchAccentBar, { backgroundColor: theme.green }]} />
+            <View style={styles.watchBannerContent}>
+              <MaterialIcons name="visibility" size={20} color={theme.green} style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.watchBannerLabel, { color: textMuted }]}>Active Watch</Text>
+                <Text style={[styles.watchBannerArea, { color: textPrimary }]}>{watch.area}</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={textMuted} />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[card, styles.watchBanner]}
+            onPress={() => router.push('/(parent)/watch-create')}
+            activeOpacity={0.80}
+          >
+            <View style={styles.watchBannerContent}>
+              <MaterialIcons name="add-circle-outline" size={20} color={textMuted} style={{ marginRight: 10 }} />
+              <Text style={[styles.watchBannerLabel, { color: textMuted, flex: 1 }]}>Start a Watch — track a skin area over time</Text>
+              <MaterialIcons name="chevron-right" size={20} color={textMuted} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* ── Prize Requests (conditional) ── */}
         {pendingRedemptions.length > 0 && (
@@ -418,4 +450,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   quickBtnLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3 },
+  watchBanner: { paddingVertical: 14, overflow: 'hidden' },
+  watchAccentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 },
+  watchBannerContent: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12 },
+  watchBannerLabel: { fontSize: 11, fontWeight: '500' },
+  watchBannerArea: { fontSize: 14, fontWeight: '700', marginTop: 1 },
 });

@@ -1,5 +1,44 @@
 # Eczcalibur — Build Changelog
 
+## Phase 21 — MAVL (Monitored Area Visual Log) — Watch Feature (2026-04-04)
+
+**TypeScript: 0 errors.**
+
+**Backend fix deployed:** `backend/app/schemas.py` — `_MAX_B64_BYTES` was a Pydantic `ModelPrivateAttr` (underscore-prefixed class variable); moved to module-level constant `_MAX_PHOTO_B64_BYTES`, resolving `TypeError: '>' not supported between instances of 'int' and 'ModelPrivateAttr'` on every `/analyze-watch` call.
+
+**Files created:**
+- `supabase/migrations/002_watch_tables.sql` — `watch_configs` + `watch_photos` tables, RLS policies mirroring existing pattern, FK to `child_profiles`
+- `lib/imageUtils.ts` — `compressForWatch()`: expo-image-manipulator, max 1200px, JPEG 0.75 quality, returns `{uri, base64}`
+- `app/(parent)/watch-create.tsx` — area grid (13 presets) + duration picker (7/14/21 days), creates WatchConfig, navigates back
+- `app/(parent)/watch-detail.tsx` — photo timeline (horizontal scroll), Run Analysis button (base64 read via `expo-file-system/legacy`), trend badge + summary + key observations + doctor questions, End Watch confirmation alert
+- `backend/app/routers/watch_analysis.py` — POST /analyze-watch: Clerk-authenticated, up to 10 base64 photos, calls Claude Opus 4.6 with multi-image content, returns trend + summary + observations + questions
+- `backend/app/prompts.py` (additions) — `WATCH_ANALYSIS_SYSTEM` + `watch_analysis_user_content()`
+
+**Files modified:**
+- `lib/types.ts` — added `WatchConfig`, `WatchPhoto`, `WatchAnalysisResult` interfaces; extended `AppState`
+- `lib/storage.ts` — added `WATCH_CONFIGS` key, row mappers, `readWatchConfigs`, `saveWatchConfig`, `deactivateWatchConfig`, `appendWatchPhoto` (Supabase-only), `getWatchPhotos`; updated `hydrateAll()`
+- `store/useAppStore.ts` — added `watchConfigs`, `setWatchConfigs`, `addWatchConfig`, `deactivateWatch`, `activeWatch()` derived helper
+- `app/(parent)/dashboard.tsx` — Watch banner (Active Watch → watch-detail, or Start a Watch → watch-create); added `watchConfigs` to store destructure for Zustand v5 reactivity
+- `app/(parent)/_layout.tsx` — added `watch-create` and `watch-detail` as hidden tab screens (`href: null`)
+- `app/(child)/log.tsx` — Step 4 "Special Mission" (conditional on active watch); `totalSteps` dynamic (3 or 4); `watchBonus = 15 pts`; calls `compressForWatch` + `appendWatchPhoto` (non-fatal try/catch)
+- `backend/app/main.py` — registered `watch_analysis` router; added `WatchBodySizeLimit` middleware (30 MB ceiling)
+- `backend/app/schemas.py` — `WatchPhoto` + `WatchAnalysisRequest` + `WatchAnalysisResponse` models; bug fix: `_MAX_B64_BYTES` → module-level `_MAX_PHOTO_B64_BYTES`
+
+**Bugs fixed:**
+- `FileReader` unavailable in React Native Hermes — replaced `fetch(uri).blob().FileReader` chain with `expo-file-system/legacy` `readAsStringAsync(uri, {encoding: 'base64'})`
+- Metro syntax error: Step 4 JSX block placed outside component function — moved inside `LogScreen` before step 3 return
+- Zustand v5 re-render: `watchConfigs` omitted from dashboard destructure — added to subscription list
+- Pydantic `ModelPrivateAttr` TypeError: `_MAX_B64_BYTES` on WatchPhoto class — moved to module-level constant
+
+**E2E verified (ADB):**
+- Test 1 ✅ Dashboard shows Watch banner (Active Watch / Start a Watch)
+- Test 2 ✅ Watch creation — area grid + duration picker → watch config saved → banner updates
+- Test 3 ✅ Child Step 4 "Special Mission" — photo picker shows watched area, +15 pts logged
+- Test 4 ✅ Watch Detail — photo timeline loads, Run Analysis returns Claude analysis with trend badge, summary, key observations, doctor questions
+- (Test 5 / 6 pending commit)
+
+---
+
 ## Phase 20 — Parent Dashboard UI Redesign (2026-04-04)
 
 **TypeScript: 0 errors.**

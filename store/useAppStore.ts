@@ -13,8 +13,10 @@ import { create } from 'zustand';
 import {
   appendFlareLog,
   clearAll,
+  deactivateWatchConfig,
   hydrateAll,
   readQuestCompletions,
+  saveWatchConfig,
   writeFlareLogs,
   writePoints,
   writePrizes,
@@ -31,6 +33,7 @@ import type {
   PointsLedger,
   Prize,
   RedemptionRequest,
+  WatchConfig,
   Zone,
 } from '@/lib/types';
 
@@ -74,8 +77,14 @@ interface AppStore extends AppState {
   // Quest completions
   completeQuest: (zone: Zone, questIndex: number) => Promise<void>;
 
+  // Watch configs
+  setWatchConfigs: (configs: WatchConfig[]) => void;
+  addWatchConfig: (config: WatchConfig) => Promise<void>;
+  deactivateWatch: (id: string) => Promise<void>;
+
   // Derived helpers
   currentZone: () => Zone;
+  activeWatch: () => WatchConfig | null;
 }
 
 // ─── Initial state ────────────────────────────────────────────────────────────
@@ -89,6 +98,7 @@ const INITIAL_STATE: AppState & { isHydrated: boolean; questCompletions: Require
   prizes: [],
   redemptions: [],
   points: { total: 0, earned: 0, spent: 0 },
+  watchConfigs: [],
   questCompletions: EMPTY_COMPLETIONS,
 };
 
@@ -251,11 +261,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ questCompletions: updated });
   },
 
+  // ── Watch configs ──
+
+  setWatchConfigs(configs) {
+    set({ watchConfigs: configs });
+  },
+
+  async addWatchConfig(config) {
+    await saveWatchConfig(config);
+    set({ watchConfigs: [...get().watchConfigs, config] });
+  },
+
+  async deactivateWatch(id) {
+    await deactivateWatchConfig(id);
+    set({
+      watchConfigs: get().watchConfigs.map((c) =>
+        c.id === id ? { ...c, active: false } : c,
+      ),
+    });
+  },
+
   // ── Derived ──
 
   currentZone(): Zone {
     const { flareLogs } = get();
     if (flareLogs.length === 0) return 'green';
     return flareLogs[flareLogs.length - 1].zone;
+  },
+
+  activeWatch(): WatchConfig | null {
+    const { watchConfigs, profile } = get();
+    if (!profile) return null;
+    return watchConfigs.find((c) => c.childId === profile.id && c.active) ?? null;
   },
 }));

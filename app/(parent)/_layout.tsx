@@ -79,6 +79,14 @@ export default function ParentLayout() {
         name="settings"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="watch-create"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="watch-detail"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

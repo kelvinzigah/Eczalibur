@@ -130,6 +130,7 @@ class AppointmentSummaryResponse(_CamelModel):
 
 
 _ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+_MAX_PHOTO_B64_BYTES = 2_800_000  # ~2.7 MB base64 ≈ 2 MB decoded
 
 
 class WatchPhoto(_CamelModel):
@@ -143,9 +144,6 @@ class WatchPhoto(_CamelModel):
     area: str               # e.g., "left elbow crease"
     notes: str | None = None  # optional child-entered observation
 
-    # ~2.7 MB of base64 ≈ 2 MB of decoded image — keep photos compressed on the client
-    _MAX_B64_BYTES = 2_800_000
-
     @field_validator("photo_b64")
     @classmethod
     def strip_and_validate_b64(cls, v: str) -> str:
@@ -155,9 +153,9 @@ class WatchPhoto(_CamelModel):
         v = v.strip()
         if not v:
             raise ValueError("photo_b64 must not be empty")
-        if len(v) > WatchPhoto._MAX_B64_BYTES:
+        if len(v) > _MAX_PHOTO_B64_BYTES:
             raise ValueError(
-                f"photo_b64 exceeds maximum allowed size ({WatchPhoto._MAX_B64_BYTES} chars). "
+                f"photo_b64 exceeds maximum allowed size ({_MAX_PHOTO_B64_BYTES} chars). "
                 "Compress the image before uploading."
             )
         # Validate that the remaining string is valid base64

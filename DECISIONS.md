@@ -1,5 +1,43 @@
 # Eczcalibur — Architectural Decisions
 
+## Phase 21 — MAVL Watch Feature
+
+### D-026: Watch photos stored in Supabase only — no AsyncStorage fallback
+**Decision:** `appendWatchPhoto` writes only to Supabase. No local AsyncStorage backup for watch photos.
+
+**Rationale:** Base64-encoded images (even compressed at 1200px/0.75) can exceed 500 KB each. AsyncStorage has a 6 MB practical limit across all keys. Storing 10 photos locally would exhaust it. Supabase is the authoritative store; offline photo logging is deferred.
+
+**Impact:** `lib/storage.ts` `appendWatchPhoto` — no `KEYS` entry, Supabase-only insert.
+
+---
+
+### D-027: `expo-file-system/legacy` for base64 reads in React Native
+**Decision:** Photos are read as base64 using `readAsStringAsync(uri, {encoding: 'base64'})` from `expo-file-system/legacy`, not via `fetch(uri).blob()` + `FileReader`.
+
+**Rationale:** `FileReader` is a browser-only Web API. React Native's Hermes engine does not implement it. The `/legacy` export of `expo-file-system` (v55) retains the `readAsStringAsync` API that works natively.
+
+**Impact:** `app/(parent)/watch-detail.tsx` import and base64 encoding path.
+
+---
+
+### D-028: `_MAX_B64_BYTES` must be module-level, not a Pydantic model class variable
+**Decision:** Size limits used inside `@field_validator` functions are defined as module-level constants, not class-level attributes on the Pydantic model.
+
+**Rationale:** Pydantic v2 treats any underscore-prefixed class variable as a `ModelPrivateAttr`. Accessing `WatchPhoto._MAX_B64_BYTES` from a validator returns the descriptor object, not the int — causing `TypeError: '>' not supported between instances of 'int' and 'ModelPrivateAttr'` on every request.
+
+**Impact:** `backend/app/schemas.py` — `_MAX_PHOTO_B64_BYTES = 2_800_000` at module level.
+
+---
+
+### D-029: Zustand v5 store destructure must include all reactive fields
+**Decision:** All Zustand state fields that a component depends on for re-renders must appear explicitly in the `useAppStore()` destructure call.
+
+**Rationale:** Zustand v5 uses shallow comparison of the destructured values to decide re-renders. Fields omitted from the destructure are never subscribed to, so the component won't re-render when they change. `watchConfigs` was omitted from `dashboard.tsx`, causing the Watch banner to not update after `addWatchConfig()`.
+
+**Impact:** `app/(parent)/dashboard.tsx` — `watchConfigs` added to destructure.
+
+---
+
 ## Phase 12 — Security Hardening
 
 ### D-015: Bidirectional PIN gate — both directions require PIN

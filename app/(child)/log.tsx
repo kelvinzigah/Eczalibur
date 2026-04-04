@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { BG, overlayColor } from '@/constants/backgrounds';
+import { appendWatchPhoto } from '@/lib/storage';
+import { compressForWatch } from '@/lib/imageUtils';
 import { useAppStore } from '@/store/useAppStore';
-import type { BodyArea, FlareLog, Zone } from '@/lib/types';
+import type { BodyArea, FlareLog, WatchPhoto, Zone } from '@/lib/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,7 +41,7 @@ const COOLDOWN_MS  = 10 * 60 * 1000; // 10 minutes
 const MAX_PHOTOS   = 3;
 const MAX_DAILY    = 3;
 
-type Step = 1 | 2 | 3 | 'done';
+type Step = 1 | 2 | 3 | 4 | 'done';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -54,7 +56,8 @@ function formatCountdown(ms: number): string {
 
 export default function LogScreen() {
   const { theme, isDark } = useTheme();
-  const { profile, points, flareLogs, currentZone, addFlareLog, awardPoints } = useAppStore();
+  const { profile, points, flareLogs, currentZone, activeWatch, addFlareLog, awardPoints } = useAppStore();
+  const watch = activeWatch();
 
   const zone           = currentZone();
   const monitoredAreas = profile?.affectedAreas ?? [];
@@ -86,10 +89,13 @@ export default function LogScreen() {
   const isOnCooldown = timeLeft > 0;
 
   // ── Form state ───────────────────────────────────────────────────────────────
+  const totalSteps = watch ? 4 : 3;
+
   const [step,          setStep]          = useState<Step>(1);
   const [moodScore,     setMoodScore]     = useState<number | null>(null);
   const [selectedAreas, setSelectedAreas] = useState<BodyArea[]>(monitoredAreas);
   const [photoUris,     setPhotoUris]     = useState<string[]>([]);
+  const [watchPhotoUri, setWatchPhotoUri] = useState<string | null>(null);
   const [pointsEarned,  setPointsEarned]  = useState(0);
   const [loading,       setLoading]       = useState(false);
 
@@ -115,8 +121,9 @@ export default function LogScreen() {
     if (!moodScore) return;
     setLoading(true);
 
-    // +5 per photo, base 10
-    const earned = 10 + photoUris.length * 5;
+    // +5 per flare photo, +15 for watch mission photo, base 10
+    const watchBonus = watchPhotoUri ? 15 : 0;
+    const earned = 10 + photoUris.length * 5 + watchBonus;
 
     // Derive zone from itch/mood severity — this is the mechanism that drives zone transitions
     const derivedZone: Zone = moodScore <= 2 ? 'green' : moodScore === 3 ? 'yellow' : 'red';
@@ -136,6 +143,25 @@ export default function LogScreen() {
 
     await addFlareLog(log);
     await awardPoints(earned);
+
+    // Upload watch photo if captured
+    if (watchPhotoUri && watch) {
+      try {
+        const compressed = await compressForWatch(watchPhotoUri);
+        const wp: WatchPhoto = {
+          id:            `wp_${Date.now()}`,
+          watchConfigId: watch.id,
+          photoUrl:      compressed.uri,
+          timestamp:     new Date().toISOString(),
+          area:          watch.area,
+          notes:         null,
+          createdAt:     new Date().toISOString(),
+        };
+        await appendWatchPhoto(wp);
+      } catch {
+        // Non-fatal — log still saved, watch photo silently skipped
+      }
+    }
 
     setPointsEarned(earned);
     setLoading(false);
@@ -228,7 +254,7 @@ export default function LogScreen() {
       <ImageBackground source={isDark ? BG.dark : BG.light} style={styles.screen} resizeMode="cover">
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlayColor(isDark, 0.48) }]} />
         <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 1 OF 3</Text>
+          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 1 OF {totalSteps}</Text>
           <Text style={[styles.title, { color: theme.gold }]}>How does your skin feel?</Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
             Tap the face that matches right now
@@ -284,7 +310,7 @@ export default function LogScreen() {
       <ImageBackground source={isDark ? BG.dark : BG.light} style={styles.screen} resizeMode="cover">
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlayColor(isDark, 0.48) }]} />
         <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 2 OF 3</Text>
+          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 2 OF {totalSteps}</Text>
           <Text style={[styles.title, { color: theme.gold }]}>Where is it bothering you?</Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
             Tap all areas that feel itchy or sore today
@@ -333,16 +359,94 @@ export default function LogScreen() {
     );
   }
 
+  // ─── Step 4: Special Mission (watch photo) ────────────────────────────────────
+
+  if (step === 4 && watch) {
+    const missionEarned = 10 + photoUris.length * 5 + (watchPhotoUri ? 15 : 0);
+    return (
+      <ImageBackground source={isDark ? BG.dark : BG.light} style={styles.screen} resizeMode="cover">
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlayColor(isDark, 0.48) }]} />
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 4 OF 4</Text>
+          <Text style={[styles.title, { color: theme.gold }]}>⚔ Special Mission!</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            Take a photo of your {watch.area.toLowerCase()} for your parent's Watch log.{'\n'}
+            This earns you +15 bonus gold!
+          </Text>
+
+          {watchPhotoUri ? (
+            <View style={styles.watchPhotoContainer}>
+              <Image source={{ uri: watchPhotoUri }} style={styles.watchPhotoThumb} resizeMode="cover" />
+              <TouchableOpacity
+                style={[styles.removePhoto, { backgroundColor: theme.error }]}
+                onPress={() => setWatchPhotoUri(null)}
+              >
+                <Text style={styles.removePhotoX}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.addPhotoSlot, styles.watchPhotoSlot, { borderColor: theme.gold }]}
+              onPress={async () => {
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ['images'],
+                  quality: 0.8,
+                  base64: false,
+                });
+                if (!result.canceled && result.assets[0]) {
+                  setWatchPhotoUri(result.assets[0].uri);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.addPhotoIcon}>📷</Text>
+              <Text style={[styles.addPhotoText, { color: theme.gold }]}>Take mission photo</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={[styles.pointsPreview, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+            <Text style={[styles.pointsPreviewText, { color: theme.gold }]}>
+              🪙 {missionEarned} pts this log
+            </Text>
+            <Text style={[styles.pointsBreakdown, { color: theme.textMuted }]}>
+              10 base
+              {photoUris.length > 0 ? ` + ${photoUris.length * 5} photo bonus` : ''}
+              {watchPhotoUri ? ' + 15 mission bonus' : ''}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              { backgroundColor: theme.green },
+              loading && { opacity: 0.4 },
+            ]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <Text style={[styles.primaryBtnText, { color: theme.bgNav }]}>
+              {loading ? 'Saving…' : `✓ Log it! (+${missionEarned} pts)`}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.backLink} onPress={() => setStep(3)}>
+            <Text style={[styles.backLinkText, { color: theme.textMuted }]}>← Back</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </ImageBackground>
+    );
+  }
+
   // ─── Step 3: Photos ───────────────────────────────────────────────────────────
 
   const canAddMore = photoUris.length < MAX_PHOTOS;
-  const earned     = 10 + photoUris.length * 5;
+  const earned     = 10 + photoUris.length * 5 + (watchPhotoUri ? 15 : 0);
 
   return (
     <ImageBackground source={isDark ? BG.dark : BG.light} style={styles.screen} resizeMode="cover">
       <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlayColor(isDark, 0.48) }]} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 3 OF 3</Text>
+        <Text style={[styles.stepLabel, { color: theme.textMuted }]}>STEP 3 OF {totalSteps}</Text>
         <Text style={[styles.title, { color: theme.gold }]}>Add photos? (+5 each)</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>
           Photos help track how your skin changes.{'\n'}
@@ -385,19 +489,28 @@ export default function LogScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.primaryBtn,
-            { backgroundColor: theme.green },
-            loading && { opacity: 0.4 },
-          ]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={[styles.primaryBtnText, { color: theme.bgNav }]}>
-            {loading ? 'Saving…' : `✓ Log it! (+${earned} pts)`}
-          </Text>
-        </TouchableOpacity>
+        {watch ? (
+          <TouchableOpacity
+            style={[styles.primaryBtn, { backgroundColor: theme.gold }]}
+            onPress={() => setStep(4)}
+          >
+            <Text style={[styles.primaryBtnText, { color: theme.bgNav }]}>Next →</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              { backgroundColor: theme.green },
+              loading && { opacity: 0.4 },
+            ]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <Text style={[styles.primaryBtnText, { color: theme.bgNav }]}>
+              {loading ? 'Saving…' : `✓ Log it! (+${earned} pts)`}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.backLink} onPress={() => setStep(2)}>
           <Text style={[styles.backLinkText, { color: theme.textMuted }]}>← Back</Text>
@@ -458,6 +571,9 @@ const styles = StyleSheet.create({
   },
   addPhotoIcon: { fontSize: 28 },
   addPhotoText: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  watchPhotoSlot: { width: 160, height: 160, alignSelf: 'center', marginBottom: 20, borderColor: undefined },
+  watchPhotoContainer: { alignSelf: 'center', position: 'relative', marginBottom: 20 },
+  watchPhotoThumb: { width: 160, height: 160, borderRadius: 16 },
 
   // Points preview
   pointsPreview: {

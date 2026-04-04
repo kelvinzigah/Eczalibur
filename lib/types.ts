@@ -124,6 +124,39 @@ export interface RedemptionRequest {
   resolvedAt: string | null;
 }
 
+// ─── MAVL Watch ──────────────────────────────────────────────────────────────
+
+export interface WatchConfig {
+  id: string;
+  childId: string;
+  /** Body area being monitored, e.g. "left elbow crease" */
+  area: string;
+  durationDays: 7 | 14 | 21;
+  /** ISO date YYYY-MM-DD */
+  startDate: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface WatchPhoto {
+  id: string;
+  watchConfigId: string;
+  /** Supabase storage public URL */
+  photoUrl: string;
+  /** ISO 8601 timestamp when photo was taken */
+  timestamp: string;
+  area: string;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface WatchAnalysisResult {
+  summary: string;
+  trend: 'improving' | 'stable' | 'worsening' | 'insufficient_data';
+  keyObservations: string[];
+  questionsForDoctor: string[];
+}
+
 // ─── App State ───────────────────────────────────────────────────────────────
 
 export interface PointsLedger {
@@ -140,6 +173,7 @@ export interface AppState {
   prizes: Prize[];
   redemptions: RedemptionRequest[];
   points: PointsLedger;
+  watchConfigs: WatchConfig[];
 }
 
 // ─── API Payloads ────────────────────────────────────────────────────────────
