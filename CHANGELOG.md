@@ -1,5 +1,28 @@
 # Eczcalibur — Build Changelog
 
+## Phase 17 — Supabase Integration (2026-04-03)
+
+**TypeScript: 0 errors.**
+
+**Files created:**
+- `supabase/migrations/001_initial_schema.sql` — full PostgreSQL schema: 6 tables (child_profiles, flare_logs, prizes, redemption_requests, points_ledger, quest_completions), custom enums, RLS policies, updated_at trigger, realtime enabled on 3 tables
+- `lib/supabase.ts` — Supabase client singleton with Clerk JWT injection via custom fetch interceptor; `setClerkTokenProvider` + `getClerkUserId` helpers
+- `hooks/useRealtimeSync.ts` — `postgres_changes` subscriptions for redemption_requests, points_ledger, prizes; updates Zustand state live
+
+**Files modified:**
+- `lib/storage.ts` — full rewrite: Supabase primary store, AsyncStorage offline fallback; same exported signatures; row mappers for all entities
+- `app/_layout.tsx` — added `SupabaseTokenSync` (wires Clerk getToken) + `RealtimeSync` components inside `<ClerkLoaded>`
+
+**Bug fixed:**
+- `lib/supabase.ts` fetch interceptor was spreading `Headers` instance as plain object, dropping the `apikey` header → fixed with `new Headers(options.headers)` to properly copy all headers before injecting the Clerk JWT
+
+**Verified:**
+- `child_profiles` row written to Supabase on onboarding completion
+- RLS policies working: clerk_user_id = JWT sub claim
+- Realtime subscriptions active on connect
+
+---
+
 ## Phase 13 — UI Redesign + Log Overhaul + Parent Settings (2026-04-03)
 
 **TypeScript: 0 errors.**
