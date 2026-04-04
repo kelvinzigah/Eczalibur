@@ -30,10 +30,20 @@ export default function StoreScreen() {
   }
 
   const activePrizes = prizes.filter((p) => p.isActive);
-  const pendingRedemptions = redemptions.filter((r) => r.status === 'pending');
+  const todayStr = new Date().toDateString();
 
-  function isPending(prizeId: string) {
-    return redemptions.some((r) => r.prizeId === prizeId && r.status === 'pending');
+  type PrizeStatus = 'available' | 'pending' | 'approved' | 'denied-retryable' | 'denied-locked';
+
+  function getPrizeStatus(prizeId: string): PrizeStatus {
+    const todayRecords = redemptions.filter(
+      (r) => r.prizeId === prizeId && new Date(r.requestedAt).toDateString() === todayStr,
+    );
+    if (todayRecords.some((r) => r.status === 'approved')) return 'approved';
+    const deniedCount = todayRecords.filter((r) => r.status === 'denied').length;
+    if (deniedCount >= 3) return 'denied-locked';
+    if (todayRecords.some((r) => r.status === 'pending')) return 'pending';
+    if (deniedCount > 0) return 'denied-retryable';
+    return 'available';
   }
 
   async function handleRedeem(prize: Prize) {
@@ -45,7 +55,8 @@ export default function StoreScreen() {
       );
       return;
     }
-    if (isPending(prize.id)) {
+    // Guard against double-pending
+    if (redemptions.some((r) => r.prizeId === prize.id && r.status === 'pending')) {
       Alert.alert('Already requested', 'This prize request is waiting for parent approval.');
       return;
     }
@@ -100,15 +111,31 @@ export default function StoreScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
-            const pending = isPending(item.id);
+            const status = getPrizeStatus(item.id);
             const canAfford = points.total >= item.pointCost;
             const isLoading = redeeming === item.id;
+            const isLocked = status === 'approved' || status === 'denied-locked';
+            const isDisabled = isLocked || status === 'pending' || !canAfford || isLoading;
+
+            const BUTTON: Record<PrizeStatus, { label: string; bg: string; fg: string }> = {
+              available:        { label: 'Redeem',       bg: canAfford ? theme.gold : theme.bgSurface, fg: canAfford ? theme.bgNav : theme.textMuted },
+              pending:          { label: '⏳ Pending',   bg: theme.bgSurface, fg: theme.textMuted },
+              approved:         { label: '✅ Approved',  bg: 'rgba(74,222,128,0.15)', fg: theme.zoneGreen },
+              'denied-retryable': { label: '❌ Try Again', bg: 'rgba(239,68,68,0.15)', fg: '#ef4444' },
+              'denied-locked':  { label: '❌ Denied',    bg: theme.bgSurface, fg: theme.textMuted },
+            };
+            const btn = BUTTON[status];
+
+            const cardBorderColor =
+              status === 'approved' ? theme.zoneGreen :
+              status === 'denied-locked' ? '#ef4444' :
+              theme.border;
 
             return (
               <View
                 style={[
                   styles.prizeCard,
-                  { backgroundColor: theme.bgCard, borderColor: theme.border },
+                  { backgroundColor: theme.bgCard, borderColor: cardBorderColor },
                 ]}
               >
                 <Text style={styles.prizeIcon}>{item.icon}</Text>
@@ -119,37 +146,20 @@ export default function StoreScreen() {
                       {item.description}
                     </Text>
                   ) : null}
-                  <Text
-                    style={[
-                      styles.prizeCost,
-                      { color: canAfford ? theme.gold : theme.textMuted },
-                    ]}
-                  >
+                  <Text style={[styles.prizeCost, { color: canAfford ? theme.gold : theme.textMuted }]}>
                     🪙 {item.pointCost} pts
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={[
-                    styles.redeemBtn,
-                    pending || !canAfford || isLoading
-                      ? [styles.redeemBtnDisabled, { backgroundColor: theme.bgSurface }]
-                      : { backgroundColor: theme.gold },
-                  ]}
+                  style={[styles.redeemBtn, { backgroundColor: btn.bg }]}
                   onPress={() => handleRedeem(item)}
-                  disabled={pending || isLoading}
+                  disabled={isDisabled}
                   activeOpacity={0.8}
                 >
                   {isLoading ? (
                     <ActivityIndicator size="small" color={theme.bgNav} />
                   ) : (
-                    <Text
-                      style={[
-                        styles.redeemBtnText,
-                        { color: pending || !canAfford ? theme.textMuted : theme.bgNav },
-                      ]}
-                    >
-                      {pending ? '⏳ Pending' : 'Redeem'}
-                    </Text>
+                    <Text style={[styles.redeemBtnText, { color: btn.fg }]}>{btn.label}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -158,19 +168,6 @@ export default function StoreScreen() {
         />
       )}
 
-      {/* Pending requests footer */}
-      {pendingRedemptions.length > 0 && (
-        <View style={[styles.pendingFooter, { backgroundColor: theme.bgCard, borderColor: theme.gold }]}>
-          <Text style={[styles.pendingTitle, { color: theme.gold }]}>
-            Waiting for parent approval
-          </Text>
-          {pendingRedemptions.map((r) => (
-            <Text key={r.id} style={[styles.pendingItem, { color: theme.textPrimary }]}>
-              • {r.prizeName} (🪙 {r.pointCost})
-            </Text>
-          ))}
-        </View>
-      )}
 
     </ImageBackground>
   );
@@ -235,7 +232,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
   },
-  redeemBtnDisabled: {},
   redeemBtnText: { fontSize: 13, fontWeight: 'bold' },
 
   emptyState: {
@@ -249,14 +245,4 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: 'bold' },
   emptySubtitle: { fontSize: 14, textAlign: 'center' },
 
-  pendingFooter: {
-    margin: 20,
-    marginTop: 0,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    gap: 6,
-  },
-  pendingTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
-  pendingItem: { fontSize: 13 },
 });

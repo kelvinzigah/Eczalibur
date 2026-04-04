@@ -1,3 +1,8 @@
+import { QUEST_BG, overlayColor } from '@/constants/backgrounds';
+import { useTheme } from '@/context/ThemeContext';
+import { PinVerifyModal } from '@/lib/auth/PinVerifyModal';
+import type { Zone } from '@/lib/types';
+import { useAppStore } from '@/store/useAppStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -12,11 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useTheme } from '@/context/ThemeContext';
-import { useAppStore } from '@/store/useAppStore';
-import { PinVerifyModal } from '@/lib/auth/PinVerifyModal';
-import { QUEST_BG, overlayColor } from '@/constants/backgrounds';
-import type { Zone } from '@/lib/types';
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
 
@@ -96,9 +96,9 @@ export default function ChildHome() {
         </View>
       </View>
 
-      {/* ── Hero scene — transparent so the full-screen background image shows through ── */}
+      {/* ── Hero scene — transparent so background image shows through ── */}
       <View style={styles.heroScene}>
-        <View style={[styles.nameOverlay, { backgroundColor: 'rgba(2,11,2,0.65)' }]}>
+        <View style={styles.nameOverlay}>
           <Text style={styles.heroName}>{childName.toUpperCase()}</Text>
           <Text style={styles.heroLevel}>LEVEL {level} FOREST GUARDIAN</Text>
         </View>
@@ -170,7 +170,7 @@ export default function ChildHome() {
       </ScrollView>
 
       {/* ── FLARE-UP button (fixed footer) ── */}
-      <View style={[styles.flareWrapper, { backgroundColor: isDark ? 'rgba(2,11,2,0.85)' : 'rgba(242,249,234,0.85)' }]}>
+      <View style={styles.flareWrapper}>
         <TouchableOpacity
           style={[styles.flareButton, { backgroundColor: theme.error, shadowColor: theme.errorDark }]}
           onPress={() => router.push('/(child)/emergency')}
@@ -332,12 +332,13 @@ const styles = StyleSheet.create({
   heroScene: {
     width: '100%',
     height: 240,
-    justifyContent: 'flex-end',
   },
   nameOverlay: {
+    position: 'absolute',
+    bottom: -11,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingBottom: 14,
-    paddingTop: 10,
   },
   heroName: {
     fontSize: 22,
@@ -345,8 +346,8 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     color: '#4ade80',
     textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
   heroLevel: {
     fontSize: 10,
@@ -355,6 +356,9 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     textTransform: 'uppercase',
     marginTop: 3,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
 
   // Quest section ──────────────────────────────────────────────────────────────
