@@ -1,5 +1,45 @@
 # Eczcalibur — Build Changelog
 
+## Phase 18 — FastAPI Backend + Dashboard Polish (2026-04-04)
+
+**TypeScript: 0 errors.**
+
+**Files created:**
+- `backend/app/main.py` — FastAPI app, CORS, health endpoint
+- `backend/app/config.py` — pydantic-settings, auto-derived Clerk JWKS URL from publishable key
+- `backend/app/auth.py` — Clerk RS256 JWT verification via PyJWT + JWKS (all endpoints protected)
+- `backend/app/schemas.py` — Pydantic v2 camelCase models mirroring TypeScript API types exactly
+- `backend/app/prompts.py` — verbatim port of all 3 Claude system prompts + user templates
+- `backend/app/log_context.py` — Python port of `buildChatLogContext()` + `computeLogSummary()`
+- `backend/app/routers/generate_plan.py` — POST /generate-plan
+- `backend/app/routers/chat.py` — POST /chat
+- `backend/app/routers/appointment.py` — POST /appointment-summary
+- `backend/Dockerfile` + `backend/fly.toml` — containerised deploy to Fly.io (app: eczcalibur-api, region: yyz)
+- `backend/requirements.txt` — pinned deps (fastapi, uvicorn, anthropic, PyJWT, httpx, pydantic-settings)
+- `lib/clerkToken.ts` — token provider extracted from supabase.ts (no circular deps)
+- `lib/api.ts` — `apiFetch()` wrapper: FastAPI when `EXPO_PUBLIC_API_BASE_URL` set, Expo +api.ts fallback otherwise
+
+**Files modified:**
+- `lib/supabase.ts` — imports token provider from clerkToken.ts; re-exports setClerkTokenProvider + getClerkUserId
+- `app/(parent)/onboarding.tsx` — uses apiFetch; Hero Type picker: removed "Other", default to Boy
+- `app/(parent)/chat.tsx` — uses apiFetch
+- `app/(parent)/appointment.tsx` — uses apiFetch
+- `app/(parent)/dashboard.tsx` — greeting now "Welcome back, [parentCallName]"; zone card label "[child name]'s Current Zone"
+- `lib/types.ts` — gender type: removed 'neutral'
+- `constants/backgrounds.ts` — removed neutral-dark/neutral-light QUEST_BG keys
+- `.gitignore` — added Python entries
+
+**Bugs fixed:**
+- `budget_tokens` (8000/5000) exceeded `max_tokens` (4096/2048) causing Anthropic 400 → fixed max_tokens to 16000/8000
+- Fly.io region `yul` deprecated → changed to `yyz`
+
+**Deployed:**
+- `https://eczcalibur-api.fly.dev` — health check verified ✓
+- `EXPO_PUBLIC_API_BASE_URL=https://eczcalibur-api.fly.dev` set in .env
+- Plan generation confirmed working end-to-end through FastAPI
+
+---
+
 ## Phase 17 — Supabase Integration (2026-04-03)
 
 **TypeScript: 0 errors.**

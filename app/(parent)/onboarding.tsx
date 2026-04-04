@@ -53,7 +53,7 @@ export default function OnboardingScreen() {
   // Step 3 — child details
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | 'neutral'>('neutral');
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [location, setLocation] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
 
@@ -310,7 +310,7 @@ export default function OnboardingScreen() {
 
             <Text style={styles.label}>Hero Type</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-              {([['male', '🧝‍♂️ Boy'], ['female', '🧝‍♀️ Girl'], ['neutral', '🧙 Other']] as const).map(([val, label]) => (
+              {([['male', '🧝‍♂️ Boy'], ['female', '🧝‍♀️ Girl']] as const).map(([val, label]) => (
                 <TouchableOpacity
                   key={val}
                   style={[

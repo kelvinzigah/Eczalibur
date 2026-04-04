@@ -57,7 +57,7 @@ export interface ChildProfile {
   /** Age in years */
   age: number;
   /** Hero character gender for child UI */
-  gender?: 'male' | 'female' | 'neutral';
+  gender?: 'male' | 'female';
   /** City or region for weather lookup */
   location: string;
   diagnosis: string;

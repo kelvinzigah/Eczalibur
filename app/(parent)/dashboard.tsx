@@ -58,12 +58,11 @@ export default function ParentDashboard() {
       </View>
 
       {/* Greeting */}
-      <Text style={[styles.greeting, { color: theme.textMuted }]}>Welcome back,</Text>
-      <Text style={[styles.childName, { color: theme.gold }]}>{profile.name}'s Quest</Text>
+      <Text style={[styles.greeting, { color: theme.textMuted }]}>Welcome back, {profile.parentCallName || profile.parentName || 'Parent'}</Text>
 
       {/* Zone card */}
       <View style={[styles.zoneCard, { borderColor: zc.border, backgroundColor: zc.bg }]}>
-        <Text style={[styles.cardLabel, { color: theme.textMuted }]}>CURRENT ZONE</Text>
+        <Text style={[styles.cardLabel, { color: theme.textMuted }]}>{profile.name}'s Current Zone</Text>
         <Text style={[styles.cardValue, { color: zc.color }]}>{zc.label}</Text>
       </View>
 

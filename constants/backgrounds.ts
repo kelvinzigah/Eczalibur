@@ -18,8 +18,6 @@ export const QUEST_BG: Record<string, number> = {
   'male-light':   require('@/assets/images/child-bg-light-boy.jpg'),
   'female-dark':  require('@/assets/images/child-bg-dark-girl.jpg'),
   'female-light': require('@/assets/images/child-bg-light-girl.jpg'),
-  'neutral-dark': require('@/assets/images/child-bg-dark-boy.jpg'),
-  'neutral-light':require('@/assets/images/child-bg-light-boy.jpg'),
 };
 
 /** Overlay colour that sits between the background image and the content */
