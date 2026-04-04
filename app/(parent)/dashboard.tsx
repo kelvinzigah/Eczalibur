@@ -132,7 +132,7 @@ export default function ParentDashboard() {
   const lastFlare = formatLastFlare(flareLogs);
   const topTrigger = profile.triggers?.[0] ?? 'None recorded';
   const pendingRedemptions = redemptions.filter((r) => r.status === 'pending');
-  const watch: WatchConfig | null = activeWatch();
+  const watch: WatchConfig | null = isHydrated ? activeWatch() : null;
 
   const actionBullets: string[] = profile.actionPlan
     ? (profile.actionPlan[zone]?.parentInstructions ?? []).slice(0, 3)

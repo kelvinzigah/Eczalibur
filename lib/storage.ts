@@ -639,9 +639,9 @@ export async function clearAll(): Promise<void> {
   const uid = await getClerkUserId();
   if (!uid) return;
   try {
-    // Cascade from child_profiles cleans flare_logs, prizes, redemption_requests,
-    // watch_configs, and watch_photos (all FK to clerk_user_id)
     await Promise.all([
+      supabase.from('watch_photos').delete().eq('clerk_user_id', uid),
+      supabase.from('watch_configs').delete().eq('clerk_user_id', uid),
       supabase.from('quest_completions').delete().eq('clerk_user_id', uid),
       supabase.from('points_ledger').delete().eq('clerk_user_id', uid),
       supabase.from('child_profiles').delete().eq('clerk_user_id', uid),
