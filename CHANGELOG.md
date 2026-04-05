@@ -1,5 +1,18 @@
 # Eczcalibur — Build Changelog
 
+## Post-Hackathon — Won Best in Biology & Physical Health Track (2026-04-04)
+
+**Result:** 1st place — CBC McGill Hackathon 2026, Biology & Physical Health track.
+
+**Final fixes shipped day-of:**
+- Phase 22: Watches tab (All/Active/Past, long-press delete), activeWatch() fix, daily cap 3→15, cooldown 10 min→15 sec
+- `clearAll()` now explicitly deletes watch_configs + watch_photos from Supabase on reset
+- Dashboard watch banner guarded behind `isHydrated` to prevent stale-data flash
+- Cooldown UI text changed from hardcoded "10 minutes" to live countdown in seconds
+- README updated to reflect full Phase 22 feature set
+
+---
+
 ## Phase 21 — MAVL (Monitored Area Visual Log) — Watch Feature (2026-04-04)
 
 **TypeScript: 0 errors.**
