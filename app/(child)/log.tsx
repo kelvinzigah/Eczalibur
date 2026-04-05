@@ -233,7 +233,7 @@ export default function LogScreen() {
           </Text>
           <View style={[styles.cooldownNote, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
             <Text style={[styles.cooldownNoteText, { color: theme.textMuted }]}>
-              ⏳ Next log unlocks in 10 minutes
+              ⏳ Next log unlocks in {Math.ceil(timeLeft / 1000)}s
             </Text>
           </View>
           <TouchableOpacity
